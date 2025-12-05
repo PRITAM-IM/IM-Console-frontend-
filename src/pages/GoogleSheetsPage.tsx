@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 import { 
   FileSpreadsheet, 
   ExternalLink, 
@@ -21,12 +22,21 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import ConnectGoogleSheets from "@/components/projects/ConnectGoogleSheets";
+import StatusDropdown, { type CRMStatus } from "@/components/projects/StatusDropdown";
+import FeedbackModal from "@/components/projects/FeedbackModal";
+import RevenueModal from "@/components/projects/RevenueModal";
 import api from "@/lib/api";
 import type { Project, SpreadsheetDetails, GoogleSheet } from "@/types";
 
 interface SheetValues {
   range: string;
   values: any[][];
+}
+
+interface ModalState {
+  type: 'feedback' | 'revenue' | null;
+  status: CRMStatus;
+  rowIndex: number;
 }
 
 const GoogleSheetsPage = () => {
@@ -44,6 +54,14 @@ const GoogleSheetsPage = () => {
   const [loadingData, setLoadingData] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSheetSelector, setShowSheetSelector] = useState(false);
+  
+  // CRM state
+  const [modalState, setModalState] = useState<ModalState>({
+    type: null,
+    status: "",
+    rowIndex: -1,
+  });
+  const [optimisticUpdates, setOptimisticUpdates] = useState<Map<number, any>>(new Map());
 
   const fetchProject = useCallback(async () => {
     if (!projectId) return;
@@ -123,6 +141,97 @@ const GoogleSheetsPage = () => {
     setSearchQuery("");
   };
 
+  // CRM Functions
+  const handleStatusChange = (rowIndex: number, newStatus: CRMStatus) => {
+    if (!newStatus) return;
+
+    if (newStatus === "Closed") {
+      setModalState({ type: "revenue", status: newStatus, rowIndex });
+    } else if (["Hot Lead", "Cold Lead", "Junk Lead"].includes(newStatus)) {
+      setModalState({ type: "feedback", status: newStatus, rowIndex });
+    }
+  };
+
+  const updateSheetRow = async (rowIndex: number, updates: { [key: string]: any }) => {
+    if (!projectId || !selectedSheet) return;
+
+    try {
+      await api.post(`/google-sheets/${projectId}/update-row`, {
+        sheetName: selectedSheet.title,
+        rowIndex: rowIndex + 1, // +1 because headers are row 0
+        values: updates,
+      });
+
+      // Refresh data after successful update
+      await fetchSheetData();
+    } catch (error) {
+      console.error("Failed to update sheet:", error);
+      throw error;
+    }
+  };
+
+  const handleFeedbackSave = async (notes: string) => {
+    const { rowIndex, status } = modalState;
+    
+    // Optimistic update
+    const updates = new Map(optimisticUpdates);
+    updates.set(rowIndex, { Status: status, Notes: notes });
+    setOptimisticUpdates(updates);
+
+    try {
+      await updateSheetRow(rowIndex, { Status: status, Notes: notes });
+      toast.success(`Lead marked as ${status}`, {
+        description: "Status updated successfully",
+      });
+      setOptimisticUpdates(new Map());
+    } catch (error) {
+      toast.error("Failed to update status", {
+        description: "Please try again",
+      });
+      // Revert optimistic update
+      const revertedUpdates = new Map(optimisticUpdates);
+      revertedUpdates.delete(rowIndex);
+      setOptimisticUpdates(revertedUpdates);
+    }
+  };
+
+  const handleRevenueSave = async (revenue: number, notes: string) => {
+    const { rowIndex, status } = modalState;
+    
+    // Optimistic update
+    const updates = new Map(optimisticUpdates);
+    updates.set(rowIndex, { 
+      Status: status, 
+      "Revenue Generated": revenue, 
+      Notes: notes 
+    });
+    setOptimisticUpdates(updates);
+
+    try {
+      await updateSheetRow(rowIndex, { 
+        Status: status, 
+        "Revenue Generated": revenue, 
+        Notes: notes 
+      });
+      toast.success(`Deal closed with $${revenue.toFixed(2)} revenue`, {
+        description: "Congratulations on closing the deal!",
+      });
+      setOptimisticUpdates(new Map());
+    } catch (error) {
+      toast.error("Failed to update status", {
+        description: "Please try again",
+      });
+      // Revert optimistic update
+      const revertedUpdates = new Map(optimisticUpdates);
+      revertedUpdates.delete(rowIndex);
+      setOptimisticUpdates(revertedUpdates);
+    }
+  };
+
+  const closeModal = () => {
+    setModalState({ type: null, status: "", rowIndex: -1 });
+  };
+
   // Filter data based on search
   const filteredData = sheetData?.values?.filter((row, index) => {
     if (index === 0) return true; // Always show header
@@ -134,6 +243,28 @@ const GoogleSheetsPage = () => {
 
   const headers = filteredData[0] || [];
   const rows = filteredData.slice(1);
+  
+  // Find Status column index or mark to add it
+  const statusColumnIndex = headers.findIndex(
+    (h: string) => h?.toLowerCase() === "status"
+  );
+  const hasStatusColumn = statusColumnIndex !== -1;
+  
+  // Enhanced headers with Status column if missing
+  const displayHeaders = hasStatusColumn ? headers : [...headers, "Status"];
+  const actualStatusIndex = hasStatusColumn ? statusColumnIndex : headers.length;
+  
+  // Get cell value with optimistic updates
+  const getCellValue = (rowIndex: number, colIndex: number, originalValue: any) => {
+    const optimisticUpdate = optimisticUpdates.get(rowIndex);
+    if (!optimisticUpdate) return originalValue;
+    
+    const columnName = displayHeaders[colIndex];
+    if (optimisticUpdate.hasOwnProperty(columnName)) {
+      return optimisticUpdate[columnName];
+    }
+    return originalValue;
+  };
 
   if (loadingProject) {
     return <LoadingState message="Loading project..." />;
@@ -312,7 +443,7 @@ const GoogleSheetsPage = () => {
             </div>
             <div className="flex items-center gap-1.5">
               <Columns className="h-4 w-4" />
-              <span>{headers.length} columns</span>
+              <span>{displayHeaders.length} columns</span>
             </div>
             {searchQuery && (
               <div className="flex items-center gap-1.5 text-green-600">
@@ -343,7 +474,7 @@ const GoogleSheetsPage = () => {
                   <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-12">
                     #
                   </th>
-                  {headers.map((header, index) => (
+                  {displayHeaders.map((header, index) => (
                     <th
                       key={index}
                       className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider whitespace-nowrap"
@@ -365,21 +496,34 @@ const GoogleSheetsPage = () => {
                     <td className="px-4 py-3 text-xs text-slate-400 font-mono">
                       {rowIndex + 1}
                     </td>
-                    {headers.map((_, colIndex) => (
-                      <td
-                        key={colIndex}
-                        className="px-4 py-3 text-sm text-slate-700 max-w-xs truncate"
-                        title={String(row[colIndex] || '')}
-                      >
-                        {row[colIndex] !== undefined && row[colIndex] !== null && row[colIndex] !== '' ? (
-                          <span className="block truncate">
-                            {String(row[colIndex])}
-                          </span>
-                        ) : (
-                          <span className="text-slate-300">—</span>
-                        )}
-                      </td>
-                    ))}
+                    {displayHeaders.map((_, colIndex) => {
+                      const isStatusColumn = colIndex === actualStatusIndex;
+                      const cellValue = getCellValue(rowIndex, colIndex, row[colIndex]);
+                      
+                      return (
+                        <td
+                          key={colIndex}
+                          className="px-4 py-3 text-sm text-slate-700 max-w-xs"
+                          title={isStatusColumn ? undefined : String(cellValue || '')}
+                        >
+                          {isStatusColumn ? (
+                            <StatusDropdown
+                              value={String(cellValue || "")}
+                              onChange={(newStatus) => handleStatusChange(rowIndex, newStatus)}
+                              disabled={optimisticUpdates.has(rowIndex)}
+                            />
+                          ) : (
+                            cellValue !== undefined && cellValue !== null && cellValue !== '' ? (
+                              <span className="block truncate">
+                                {String(cellValue)}
+                              </span>
+                            ) : (
+                              <span className="text-slate-300">—</span>
+                            )
+                          )}
+                        </td>
+                      );
+                    })}
                   </motion.tr>
                 ))}
               </tbody>
@@ -441,6 +585,20 @@ const GoogleSheetsPage = () => {
           onClose={() => setShowConnectModal(false)}
         />
       )}
+
+      {/* CRM Modals */}
+      <FeedbackModal
+        isOpen={modalState.type === "feedback"}
+        onClose={closeModal}
+        onSave={handleFeedbackSave}
+        status={modalState.status}
+      />
+
+      <RevenueModal
+        isOpen={modalState.type === "revenue"}
+        onClose={closeModal}
+        onSave={handleRevenueSave}
+      />
     </motion.section>
   );
 };

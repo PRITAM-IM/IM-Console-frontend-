@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
+import { Toaster } from "sonner";
 import ProtectedRoute from "@/routes/ProtectedRoute";
 import GuestRoute from "@/routes/GuestRoute";
 import AppLayout from "@/components/layout/AppLayout";
@@ -40,7 +41,9 @@ const RootRedirect = () => {
 };
 
 const App = () => (
-  <Suspense fallback={<LoadingState message="Loading hotel analytics..." className="py-16" />}>
+  <>
+    <Toaster position="top-right" richColors closeButton />
+    <Suspense fallback={<LoadingState message="Loading hotel analytics..." className="py-16" />}>
     <Routes>
       <Route path="/" element={<RootRedirect />} />
 
@@ -84,6 +87,7 @@ const App = () => (
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   </Suspense>
+  </>
 );
 
 export default App;
