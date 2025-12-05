@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { HardDrive, Folder, FileText, Image, Video, Music, Archive, ExternalLink, RefreshCw } from "lucide-react";
+import { HardDrive, Folder, FileText, Image, Video, Music, Archive, ExternalLink, RefreshCw, ChevronRight, ArrowLeft, Home } from "lucide-react";
 import LoadingState from "@/components/common/LoadingState";
 import ErrorState from "@/components/common/ErrorState";
 import ReconnectButton from "@/components/common/ReconnectButton";
@@ -10,6 +10,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import ConnectGoogleDrive from "@/components/projects/ConnectGoogleDrive";
 import api from "@/lib/api";
 import type { Project, GoogleDriveStats, GoogleDriveFile } from "@/types";
+
+interface DriveFolder {
+  id: string;
+  name: string;
+  webViewLink?: string;
+}
+
+interface BreadcrumbItem {
+  id: string;
+  name: string;
+}
 
 const getFileIcon = (mimeType: string) => {
   if (mimeType.includes("folder")) return Folder;
@@ -37,6 +48,13 @@ const GoogleDrivePage = () => {
   const [showConnectModal, setShowConnectModal] = useState(false);
   const [driveStats, setDriveStats] = useState<GoogleDriveStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(false);
+  
+  // Folder navigation state
+  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
+  const [currentFolders, setCurrentFolders] = useState<DriveFolder[]>([]);
+  const [currentFiles, setCurrentFiles] = useState<GoogleDriveFile[]>([]);
+  const [loadingContents, setLoadingContents] = useState(false);
+  const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbItem[]>([]);
 
   const fetchProject = useCallback(async () => {
     if (!projectId) return;
@@ -75,8 +93,58 @@ const GoogleDrivePage = () => {
   useEffect(() => {
     if (project?.googleDriveFolderId) {
       void fetchDriveStats();
+      // Initialize with root folder
+      setCurrentFolderId(project.googleDriveFolderId);
+      setBreadcrumbs([{ id: project.googleDriveFolderId, name: "Root" }]);
     }
   }, [fetchDriveStats, project?.googleDriveFolderId]);
+  
+  // Fetch folder contents when currentFolderId changes
+  useEffect(() => {
+    if (currentFolderId && projectId) {
+      void fetchFolderContents(currentFolderId);
+    }
+  }, [currentFolderId, projectId]);
+  
+  const fetchFolderContents = async (folderId: string) => {
+    if (!projectId) return;
+    
+    try {
+      setLoadingContents(true);
+      const response = await api.get<{ 
+        success: boolean; 
+        data: { folders: DriveFolder[]; files: GoogleDriveFile[] } 
+      }>(`/google-drive/${projectId}/folder/${folderId}/contents`);
+      
+      setCurrentFolders(response.data.data.folders);
+      setCurrentFiles(response.data.data.files);
+    } catch (error) {
+      console.error("Failed to fetch folder contents:", error);
+      setCurrentFolders([]);
+      setCurrentFiles([]);
+    } finally {
+      setLoadingContents(false);
+    }
+  };
+  
+  const navigateToFolder = (folder: DriveFolder) => {
+    setCurrentFolderId(folder.id);
+    setBreadcrumbs([...breadcrumbs, { id: folder.id, name: folder.name }]);
+  };
+  
+  const navigateToBreadcrumb = (index: number) => {
+    const newBreadcrumbs = breadcrumbs.slice(0, index + 1);
+    setBreadcrumbs(newBreadcrumbs);
+    setCurrentFolderId(newBreadcrumbs[newBreadcrumbs.length - 1].id);
+  };
+  
+  const navigateBack = () => {
+    if (breadcrumbs.length > 1) {
+      const newBreadcrumbs = breadcrumbs.slice(0, -1);
+      setBreadcrumbs(newBreadcrumbs);
+      setCurrentFolderId(newBreadcrumbs[newBreadcrumbs.length - 1].id);
+    }
+  };
 
   const handleConnectSuccess = () => {
     setShowConnectModal(false);
@@ -203,44 +271,159 @@ const GoogleDrivePage = () => {
             </Card>
           </div>
 
-          {/* Recent Files */}
+          {/* Folder Browser */}
           <Card className="bg-white">
             <CardHeader>
-              <CardTitle className="text-slate-900">Recent Files</CardTitle>
-              <CardDescription className="text-slate-500">
-                Most recently modified files
-              </CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-slate-900">Browse Files & Folders</CardTitle>
+                  <CardDescription className="text-slate-500">
+                    Navigate through your Google Drive folders
+                  </CardDescription>
+                </div>
+                {breadcrumbs.length > 1 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={navigateBack}
+                    className="gap-2"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    Back
+                  </Button>
+                )}
+              </div>
             </CardHeader>
-            <CardContent>
-              <div className="divide-y divide-slate-100">
-                {driveStats.recentFiles.map((file: GoogleDriveFile) => {
-                  const Icon = getFileIcon(file.mimeType);
-                  return (
-                    <div key={file.id} className="py-3 flex items-center gap-4">
-                      <div className="p-2 bg-slate-100 rounded-lg">
-                        <Icon className="h-4 w-4 text-slate-600" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-slate-900 truncate">{file.name}</p>
-                        <p className="text-xs text-slate-500">
-                          {file.modifiedTime && new Date(file.modifiedTime).toLocaleDateString()}
-                          {file.size && ` • ${formatBytes(file.size)}`}
-                        </p>
-                      </div>
-                      {file.webViewLink && (
-                        <a
-                          href={file.webViewLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-700"
+            
+            {/* Breadcrumbs */}
+            {breadcrumbs.length > 0 && (
+              <div className="px-6 py-3 border-b border-slate-100 bg-slate-50">
+                <div className="flex items-center gap-2 text-sm overflow-x-auto">
+                  {breadcrumbs.map((crumb, index) => (
+                    <div key={crumb.id} className="flex items-center gap-2 flex-shrink-0">
+                      {index === 0 ? (
+                        <button
+                          onClick={() => navigateToBreadcrumb(index)}
+                          className="flex items-center gap-1.5 text-blue-600 hover:text-blue-700 font-medium"
                         >
-                          <ExternalLink className="h-4 w-4" />
-                        </a>
+                          <Home className="h-4 w-4" />
+                          {crumb.name}
+                        </button>
+                      ) : (
+                        <>
+                          <ChevronRight className="h-4 w-4 text-slate-400" />
+                          <button
+                            onClick={() => navigateToBreadcrumb(index)}
+                            className={`${
+                              index === breadcrumbs.length - 1
+                                ? "text-slate-900 font-medium"
+                                : "text-blue-600 hover:text-blue-700"
+                            }`}
+                          >
+                            {crumb.name}
+                          </button>
+                        </>
                       )}
                     </div>
-                  );
-                })}
+                  ))}
+                </div>
               </div>
+            )}
+            
+            <CardContent className="pt-6">
+              {loadingContents ? (
+                <div className="py-12">
+                  <LoadingState message="Loading folder contents..." />
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {/* Folders */}
+                  {currentFolders.length > 0 && (
+                    <div>
+                      <p className="text-sm font-semibold text-slate-700 mb-3">
+                        Folders ({currentFolders.length})
+                      </p>
+                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        {currentFolders.map((folder) => (
+                          <button
+                            key={folder.id}
+                            onClick={() => navigateToFolder(folder)}
+                            className="flex items-center gap-3 p-3 rounded-lg border border-slate-200 hover:border-blue-300 hover:bg-blue-50 transition-all text-left group"
+                          >
+                            <div className="p-2 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors">
+                              <Folder className="h-5 w-5 text-blue-600" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-slate-900 truncate group-hover:text-blue-700">
+                                {folder.name}
+                              </p>
+                              <p className="text-xs text-slate-500">Folder</p>
+                            </div>
+                            <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-blue-600" />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Files */}
+                  {currentFiles.length > 0 && (
+                    <div>
+                      <p className="text-sm font-semibold text-slate-700 mb-3">
+                        Files ({currentFiles.length})
+                      </p>
+                      <div className="divide-y divide-slate-100">
+                        {currentFiles.map((file) => {
+                          const Icon = getFileIcon(file.mimeType);
+                          return (
+                            <div key={file.id} className="py-3 flex items-center gap-4 hover:bg-slate-50 -mx-3 px-3 rounded-lg transition-colors">
+                              <div className="p-2 bg-slate-100 rounded-lg">
+                                {file.thumbnailLink ? (
+                                  <img
+                                    src={file.thumbnailLink}
+                                    alt={file.name}
+                                    className="h-10 w-10 object-cover rounded"
+                                  />
+                                ) : (
+                                  <Icon className="h-5 w-5 text-slate-600" />
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-slate-900 truncate">{file.name}</p>
+                                <p className="text-xs text-slate-500">
+                                  {file.modifiedTime && new Date(file.modifiedTime).toLocaleDateString()}
+                                  {file.size && ` • ${formatBytes(file.size)}`}
+                                </p>
+                              </div>
+                              {file.webViewLink && (
+                                <a
+                                  href={file.webViewLink}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                                >
+                                  <ExternalLink className="h-4 w-4" />
+                                </a>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Empty State */}
+                  {currentFolders.length === 0 && currentFiles.length === 0 && (
+                    <div className="py-12 text-center">
+                      <div className="inline-flex items-center justify-center w-16 h-16 bg-slate-100 rounded-full mb-4">
+                        <Folder className="h-8 w-8 text-slate-400" />
+                      </div>
+                      <p className="text-slate-600 font-medium">This folder is empty</p>
+                      <p className="text-sm text-slate-500 mt-1">No files or subfolders found</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
 
