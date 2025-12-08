@@ -21,7 +21,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Globe,
-  Star
+  Star,
+  FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -445,6 +446,7 @@ const ProjectInsightsSection = ({
 
   const navItems = [
     { label: "Overview", to: `/dashboard/${projectId}`, icon: LayoutDashboard },
+    { label: "Forms CRM", to: `/dashboard/${projectId}/templates`, icon: FileText },
     ...connectedServices.map((conn) => ({ label: conn.label, to: conn.route, icon: conn.icon })),
   ];
 
@@ -587,6 +589,7 @@ const CollapsedProjectNav = ({ projectId, project }: CollapsedProjectNavProps) =
 
   const navItems = [
     { label: "Overview", to: `/dashboard/${projectId}`, icon: LayoutDashboard },
+    { label: "Forms CRM", to: `/dashboard/${projectId}/templates`, icon: FileText },
     ...connectedServices.map((conn) => ({ label: conn.label, to: conn.route, icon: conn.icon })),
   ];
 

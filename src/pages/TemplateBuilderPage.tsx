@@ -1,0 +1,539 @@
+import { useState, useEffect } from "react";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { toast } from "sonner";
+import {
+  Plus,
+  Eye,
+  Save,
+  ChevronLeft,
+  FileText,
+  GripVertical,
+  Trash2,
+} from "lucide-react";
+import type { FormTemplate, FormPage, FormField, FieldType } from "@/types/formBuilder";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import FieldPalette from "@/components/formBuilder/FieldPalette";
+import FormCanvas from "@/components/formBuilder/FormCanvas";
+import PropertiesPanel from "@/components/formBuilder/PropertiesPanel";
+import { FormPreviewDialog } from "@/components/formBuilder/FormPreviewDialog";
+import { cn } from "@/lib/utils";
+import { generateCPSTemplate } from "@/data/cpsTemplateData";
+import formService from "@/services/formService";
+
+const TemplateBuilderPage = () => {
+  const { projectId, templateId } = useParams();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const useCPS = searchParams.get('useCPS') === 'true';
+
+  // Initialize with CPS template if flag is set
+  const getInitialTemplate = (): FormTemplate => {
+    if (useCPS) {
+      const cpsPages = generateCPSTemplate(projectId || '', '');
+      const pagesWithIds = cpsPages.map((page, index) => ({
+        ...page,
+        id: `page-${Date.now()}-${index}`,
+        fields: page.fields.map((field, fieldIndex) => ({
+          ...field,
+          id: `field-${Date.now()}-${index}-${fieldIndex}`
+        }))
+      }));
+
+      return {
+        projectId: projectId || '',
+        name: 'Client Profiling Sheet – CPS',
+        description: 'Comprehensive client profiling and marketing strategy template',
+        theme: {
+          accentColor: '#f97316',
+          mode: 'light'
+        },
+        coverPage: {
+          title: 'Client Profiling Sheet',
+          description: 'Please complete all sections to help us understand your business better',
+          showCover: true
+        },
+        pages: pagesWithIds,
+        isPublished: false,
+        isCpsTemplate: true
+      };
+    }
+
+    return {
+      projectId: projectId || '',
+      name: 'Untitled Form',
+      description: '',
+      theme: {
+        accentColor: '#f97316',
+        mode: 'light'
+      },
+      coverPage: {
+        title: 'Welcome',
+        description: 'Please fill out this form',
+        showCover: false
+      },
+      pages: [
+        {
+          id: `page-${Date.now()}`,
+          name: 'Page 1',
+          description: '',
+          fields: [],
+          order: 0
+        }
+      ],
+      isPublished: false
+    };
+  };
+
+  // Template State
+  const [template, setTemplate] = useState<FormTemplate>(getInitialTemplate());
+  const [currentPageIndex, setCurrentPageIndex] = useState(0);
+  const [selectedField, setSelectedField] = useState<FormField | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+
+  const currentPage = template.pages[currentPageIndex];
+
+  // Load existing template if templateId is provided
+  useEffect(() => {
+    const loadTemplate = async () => {
+      if (templateId && templateId !== 'new' && projectId && !useCPS) {
+        try {
+          const loadedTemplate = await formService.getFormById(projectId, templateId);
+          setTemplate(loadedTemplate);
+          toast.success('Form loaded successfully');
+        } catch (error: any) {
+          console.error('Error loading template:', error);
+          toast.error(error.response?.data?.error || 'Failed to load form');
+        }
+      }
+    };
+
+    loadTemplate();
+  }, [templateId, projectId, useCPS]);
+
+  // Save template function
+  const handleSave = async () => {
+    if (!projectId) {
+      toast.error('Project ID is missing');
+      console.error('Save failed: No project ID');
+      return;
+    }
+
+    console.log('Saving form...', { projectId, templateId: template._id, name: template.name });
+
+    try {
+      setIsSaving(true);
+
+      if (template._id) {
+        // Update existing form
+        console.log('Updating existing form:', template._id);
+        const updated = await formService.updateForm(projectId, template._id, template);
+        setTemplate(updated);
+        toast.success('Form saved successfully!');
+        console.log('Form updated:', updated);
+      } else {
+        // Create new form
+        console.log('Creating new form');
+        const created = await formService.createForm(projectId, template);
+        setTemplate(created);
+        toast.success('Form created successfully!');
+        console.log('Form created:', created);
+
+        // Update URL to include the new template ID
+        navigate(`/dashboard/${projectId}/templates/${created._id}/edit`, { replace: true });
+      }
+    } catch (error: any) {
+      console.error('Error saving template:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+
+      if (error.response?.status === 401) {
+        toast.error('Authentication required. Please log in again.');
+      } else if (error.response?.status === 404) {
+        toast.error('Project not found');
+      } else {
+        toast.error(error.response?.data?.error || error.message || 'Failed to save form');
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Preview function
+  const handlePreview = () => {
+    setShowPreview(true);
+  };
+
+  // Show success toast when CPS template is loaded
+  useEffect(() => {
+    if (useCPS) {
+      toast.success('CPS Template loaded with 16 pre-built pages! You can edit, add, or remove pages and fields as needed.', {
+        duration: 5000
+      });
+    }
+  }, [useCPS]);
+
+  // Add Field to Current Page
+  const handleFieldSelect = (fieldType: FieldType) => {
+    const newField: FormField = {
+      id: `field-${Date.now()}`,
+      type: fieldType,
+      label: getDefaultLabel(fieldType),
+      placeholder: '',
+      description: '',
+      options: getDefaultOptions(fieldType),
+      validation: {
+        required: false
+      },
+      order: currentPage.fields.length
+    };
+
+    updatePage(currentPageIndex, {
+      fields: [...currentPage.fields, newField]
+    });
+
+    setSelectedField(newField);
+    toast.success('Field added');
+  };
+
+  // Update Field
+  const handleFieldUpdate = (updatedField: FormField) => {
+    updatePage(currentPageIndex, {
+      fields: currentPage.fields.map(f =>
+        f.id === updatedField.id ? updatedField : f
+      )
+    });
+    setSelectedField(updatedField);
+  };
+
+  // Delete Field
+  const handleFieldDelete = (fieldId: string) => {
+    updatePage(currentPageIndex, {
+      fields: currentPage.fields.filter(f => f.id !== fieldId)
+    });
+    if (selectedField?.id === fieldId) {
+      setSelectedField(null);
+    }
+    toast.success('Field deleted');
+  };
+
+  // Duplicate Field
+  const handleFieldDuplicate = (field: FormField) => {
+    const duplicatedField: FormField = {
+      ...field,
+      id: `field-${Date.now()}`,
+      label: `${field.label} (Copy)`,
+      order: currentPage.fields.length
+    };
+
+    updatePage(currentPageIndex, {
+      fields: [...currentPage.fields, duplicatedField]
+    });
+    toast.success('Field duplicated');
+  };
+
+  // Page Management
+  const addPage = () => {
+    const newPage: FormPage = {
+      id: `page-${Date.now()}`,
+      name: `Page ${template.pages.length + 1}`,
+      description: '',
+      fields: [],
+      order: template.pages.length
+    };
+
+    setTemplate(prev => ({
+      ...prev,
+      pages: [...prev.pages, newPage]
+    }));
+    setCurrentPageIndex(template.pages.length);
+    toast.success('Page added');
+  };
+
+  const updatePage = (index: number, updates: Partial<FormPage>) => {
+    setTemplate(prev => ({
+      ...prev,
+      pages: prev.pages.map((page, i) =>
+        i === index ? { ...page, ...updates } : page
+      )
+    }));
+  };
+
+  const deletePage = (index: number) => {
+    if (template.pages.length === 1) {
+      toast.error('Cannot delete the last page');
+      return;
+    }
+
+    setTemplate(prev => ({
+      ...prev,
+      pages: prev.pages.filter((_, i) => i !== index)
+    }));
+
+    if (currentPageIndex >= template.pages.length - 1) {
+      setCurrentPageIndex(Math.max(0, template.pages.length - 2));
+    }
+    toast.success('Page deleted');
+  };
+
+  const renamePage = (index: number, newName: string) => {
+    updatePage(index, { name: newName });
+  };
+
+  // Helper Functions
+  const getDefaultLabel = (fieldType: FieldType): string => {
+    const labels: Record<FieldType, string> = {
+      'short-text': 'Short Answer',
+      'long-text': 'Long Answer',
+      'email': 'Email Address',
+      'phone': 'Phone Number',
+      'number': 'Number',
+      'url': 'Website URL',
+      'password': 'Password',
+      'multiple-choice': 'Multiple Choice Question',
+      'checkboxes': 'Select Multiple',
+      'dropdown': 'Select from Dropdown',
+      'picture-choice': 'Picture Choice',
+      'date': 'Date',
+      'time': 'Time',
+      'date-time': 'Date and Time',
+      'date-range': 'Date Range',
+      'rating': 'Star Rating',
+      'ranking': 'Ranking',
+      'slider': 'Slider',
+      'opinion-scale': 'Opinion Scale',
+      'file-upload': 'File Upload',
+      'signature': 'Signature',
+      'color-picker': 'Color Picker',
+      'location': 'Location',
+      'address': 'Address',
+      'currency': 'Currency',
+      'heading': 'Heading',
+      'paragraph': 'Paragraph',
+      'banner': 'Banner',
+      'divider': 'Divider',
+      'image': 'Image',
+      'video': 'Video'
+    };
+    return labels[fieldType] || 'Untitled Field';
+  };
+
+  const getDefaultOptions = (fieldType: FieldType) => {
+    if (['multiple-choice', 'checkboxes', 'dropdown', 'picture-choice'].includes(fieldType)) {
+      return [
+        { id: 'opt-1', label: 'Option 1', value: 'option-1' },
+        { id: 'opt-2', label: 'Option 2', value: 'option-2' },
+        { id: 'opt-3', label: 'Option 3', value: 'option-3' }
+      ];
+    }
+    return undefined;
+  };
+
+  return (
+    <div className="flex flex-col h-screen overflow-hidden bg-white">
+      {/* Top Toolbar */}
+      <div className="bg-white border-b-2 border-slate-200 px-6 py-4 flex items-center justify-between shadow-sm flex-shrink-0">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate(`/dashboard/${projectId}/templates`)}
+            className="gap-2"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Back to Templates
+          </Button>
+          <div className="h-8 w-px bg-slate-300" />
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl shadow-lg">
+              <FileText className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <Input
+                value={template.name}
+                onChange={(e) => setTemplate(prev => ({ ...prev, name: e.target.value }))}
+                className="text-lg font-bold border-0 focus-visible:ring-0 p-0 h-auto"
+              />
+              <p className="text-xs text-slate-500">Form Template</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handlePreview}
+            className="gap-2"
+          >
+            <Eye className="h-4 w-4" />
+            Preview
+          </Button>
+          <Button
+            size="sm"
+            onClick={handleSave}
+            disabled={isSaving}
+            className="gap-2 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700"
+          >
+            <Save className="h-4 w-4" />
+            {isSaving ? 'Saving...' : 'Save'}
+          </Button>
+        </div>
+      </div>
+
+      {/* Builder Layout */}
+      <div className="flex flex-1 overflow-hidden min-h-0">
+        {/* Left: Field Palette */}
+        <FieldPalette onFieldSelect={handleFieldSelect} />
+
+        {/* Center: Form Canvas with Tabs */}
+        <div className="flex-1 flex flex-col overflow-hidden min-h-0 min-w-0">
+          {/* Canvas */}
+          <div className="flex-1 overflow-hidden min-h-0">
+            <FormCanvas
+              currentPage={currentPage}
+              onFieldSelect={setSelectedField}
+              onFieldDelete={handleFieldDelete}
+              onFieldDuplicate={handleFieldDuplicate}
+              selectedField={selectedField}
+            />
+          </div>
+
+          {/* Page Tabs (Bottom) - Excel Style */}
+          <div className="bg-white border-t-2 border-slate-200 flex items-center gap-2 flex-shrink-0">
+            {/* Scrollable tabs container */}
+            <div className="flex-1 overflow-x-auto px-4 py-2 scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100">
+              <div className="flex items-center gap-1">
+                {template.pages.map((page, index) => (
+                  <PageTab
+                    key={page.id}
+                    page={page}
+                    index={index}
+                    isActive={currentPageIndex === index}
+                    onClick={() => setCurrentPageIndex(index)}
+                    onRename={(newName) => renamePage(index, newName)}
+                    onDelete={() => deletePage(index)}
+                    canDelete={template.pages.length > 1}
+                  />
+                ))}
+              </div>
+            </div>
+            {/* Fixed Add Page button */}
+            <div className="px-4 py-2 border-l border-slate-200 flex-shrink-0">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={addPage}
+                className="gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Add Page
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Right: Properties Panel */}
+        <PropertiesPanel
+          selectedField={selectedField}
+          onFieldUpdate={handleFieldUpdate}
+          onClose={() => setSelectedField(null)}
+        />
+      </div>
+
+      {/* Preview Dialog */}
+      <FormPreviewDialog
+        template={template}
+        isOpen={showPreview}
+        onClose={() => setShowPreview(false)}
+      />
+    </div>
+  );
+};
+
+// Page Tab Component
+interface PageTabProps {
+  page: FormPage;
+  index: number;
+  isActive: boolean;
+  onClick: () => void;
+  onRename: (newName: string) => void;
+  onDelete: () => void;
+  canDelete: boolean;
+}
+
+const PageTab = ({ page, index: _index, isActive, onClick, onRename, onDelete, canDelete }: PageTabProps) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState(page.name);
+  const [showActions, setShowActions] = useState(false);
+
+  const handleRename = () => {
+    if (editName.trim()) {
+      onRename(editName.trim());
+    }
+    setIsEditing(false);
+  };
+
+  return (
+    <div
+      className={cn(
+        "relative group flex items-center gap-2 px-4 py-2 rounded-t-lg border-2 border-b-0 transition-all cursor-pointer min-w-[120px]",
+        isActive
+          ? "bg-gradient-to-br from-slate-50 to-white border-slate-300 border-b-2 border-b-white -mb-[2px] shadow-sm"
+          : "bg-slate-100 border-slate-200 hover:bg-slate-50"
+      )}
+      onClick={onClick}
+      onMouseEnter={() => setShowActions(true)}
+      onMouseLeave={() => setShowActions(false)}
+    >
+      <GripVertical className="h-3 w-3 text-slate-400 opacity-0 group-hover:opacity-100" />
+
+      {isEditing ? (
+        <Input
+          value={editName}
+          onChange={(e) => setEditName(e.target.value)}
+          onBlur={handleRename}
+          onKeyDown={(e) => e.key === 'Enter' && handleRename()}
+          className="h-6 text-sm border-orange-300"
+          autoFocus
+          onClick={(e) => e.stopPropagation()}
+        />
+      ) : (
+        <span
+          className={cn(
+            "text-sm font-semibold flex-1",
+            isActive ? "text-slate-900" : "text-slate-600"
+          )}
+          onDoubleClick={(e) => {
+            e.stopPropagation();
+            setIsEditing(true);
+          }}
+        >
+          {page.name}
+        </span>
+      )}
+
+      {showActions && !isEditing && (
+        <div className="flex items-center gap-1">
+          {canDelete && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+              className="p-1 hover:bg-red-50 rounded transition-colors"
+            >
+              <Trash2 className="h-3 w-3 text-red-600" />
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default TemplateBuilderPage;

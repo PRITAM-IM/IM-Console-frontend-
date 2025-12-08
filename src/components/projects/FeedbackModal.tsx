@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Loader2, MessageSquare, Flame, Snowflake, Trash2 } from "lucide-react";
+import { Loader2, MessageSquare, Flame, Snowflake, Trash2, CheckCircle2 } from "lucide-react";
 import type { CRMStatus } from "./StatusDropdown";
 
 interface FeedbackModalProps {
@@ -84,25 +84,26 @@ const FeedbackModal = ({ isOpen, onClose, onSave, status }: FeedbackModalProps) 
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-lg overflow-hidden p-0">
-        {/* Header with gradient */}
-        <div className={`bg-gradient-to-r ${config.gradient} p-6 text-white relative overflow-hidden`}>
-          <div className="absolute inset-0 opacity-10" style={{
-            backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)',
-            backgroundSize: '24px 24px'
+      <DialogContent className="sm:max-w-lg overflow-hidden p-0 border-2 border-slate-200 shadow-2xl">
+        {/* Enhanced Header with gradient */}
+        <div className={`bg-gradient-to-br ${config.gradient} p-7 text-white relative overflow-hidden`}>
+          <div className="absolute inset-0 opacity-20" style={{
+            backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
+            backgroundSize: '32px 32px'
           }} />
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
           <div className="relative">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-3 text-white text-xl">
-                <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
+                <div className="p-2.5 bg-white/25 rounded-2xl backdrop-blur-sm shadow-lg">
                   {config.icon}
                 </div>
                 <div>
-                  <div className="flex items-center gap-2">
-                    <span>{config.emoji}</span>
-                    <span>{status}</span>
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-2xl">{config.emoji}</span>
+                    <span className="font-bold">{status}</span>
                   </div>
-                  <DialogDescription className="text-white/80 text-sm mt-1 font-normal">
+                  <DialogDescription className="text-white/90 text-sm mt-1.5 font-medium">
                     {config.description}
                   </DialogDescription>
                 </div>
@@ -112,10 +113,10 @@ const FeedbackModal = ({ isOpen, onClose, onSave, status }: FeedbackModalProps) 
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-4">
+        <div className="p-7 space-y-5 bg-gradient-to-br from-white to-slate-50">
           <div className="space-y-3">
-            <Label htmlFor="notes" className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-              <MessageSquare className="h-4 w-4 text-slate-500" />
+            <Label htmlFor="notes" className="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <MessageSquare className="h-4 w-4 text-slate-600" />
               Feedback & Notes
             </Label>
             <Textarea
@@ -124,29 +125,37 @@ const FeedbackModal = ({ isOpen, onClose, onSave, status }: FeedbackModalProps) 
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={8}
-              className="resize-none text-sm border-2 focus:border-green-400 transition-colors"
+              className="resize-none text-sm border-2 focus:border-green-400 transition-all shadow-sm focus:shadow-md rounded-xl"
               autoFocus
             />
-            <p className="text-xs text-slate-500">
-              {notes.length > 0 ? `${notes.length} characters` : "Start typing your notes..."}
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-slate-500 font-medium">
+                {notes.length > 0 ? `${notes.length} characters` : "Start typing your notes..."}
+              </p>
+              {notes.length > 100 && (
+                <span className="text-xs text-green-600 font-semibold flex items-center gap-1">
+                  <CheckCircle2 className="h-3 w-3" />
+                  Good detail!
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Footer */}
-        <DialogFooter className="px-6 py-4 bg-slate-50 border-t gap-2 sm:gap-0">
+        {/* Enhanced Footer */}
+        <DialogFooter className="px-7 py-5 bg-gradient-to-r from-slate-100 via-slate-50 to-slate-100 border-t-2 border-slate-200 gap-3 sm:gap-0">
           <Button
             variant="outline"
             onClick={handleCancel}
             disabled={loading}
-            className="border-slate-300"
+            className="border-2 border-slate-300 hover:border-slate-400 hover:bg-white font-semibold transition-all"
           >
             Cancel
           </Button>
           <Button
             onClick={handleSave}
             disabled={loading}
-            className={`bg-gradient-to-r ${config.gradient} border-0 text-white shadow-lg hover:shadow-xl transition-all`}
+            className={`bg-gradient-to-br ${config.gradient} border-0 text-white shadow-lg hover:shadow-2xl transition-all font-bold px-6 hover:scale-105`}
           >
             {loading ? (
               <>

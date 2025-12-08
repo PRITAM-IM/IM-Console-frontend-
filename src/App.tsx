@@ -5,6 +5,7 @@ import ProtectedRoute from "@/routes/ProtectedRoute";
 import GuestRoute from "@/routes/GuestRoute";
 import AppLayout from "@/components/layout/AppLayout";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import FullScreenLayout from "@/components/layout/FullScreenLayout";
 import LoginPage from "@/pages/LoginPage";
 import RegisterPage from "@/pages/RegisterPage";
 import GoogleCallbackPage from "@/pages/GoogleCallbackPage";
@@ -30,6 +31,8 @@ import InstagramPage from "@/pages/InstagramPage";
 import GoogleSheetsPage from "@/pages/GoogleSheetsPage";
 import GoogleDrivePage from "@/pages/GoogleDrivePage";
 import LinkedInPage from "@/pages/LinkedInPage";
+import TemplatesPage from "@/pages/TemplatesPage";
+import TemplateBuilderPage from "@/pages/TemplateBuilderPage";
 import DashboardIndex from "@/pages/DashboardIndex";
 import NotFoundPage from "@/pages/NotFoundPage";
 import LoadingState from "@/components/common/LoadingState";
@@ -68,6 +71,15 @@ const App = () => (
         <Route element={<AppLayout />}>
           <Route path="/projects/new" element={<NewProjectPage />} />
         </Route>
+        
+        {/* Full Screen Layout for Template Pages */}
+        <Route element={<FullScreenLayout />}>
+          <Route path="/dashboard/:projectId/templates" element={<TemplatesPage />} />
+          <Route path="/dashboard/:projectId/templates/new" element={<TemplateBuilderPage />} />
+          <Route path="/dashboard/:projectId/templates/:templateId" element={<TemplateBuilderPage />} />
+        </Route>
+        
+        {/* Dashboard Layout for Regular Pages */}
         <Route element={<DashboardLayout />}>
           <Route path="/dashboard" element={<DashboardIndex />} />
           <Route path="/dashboard/:projectId" element={<DashboardOverviewPage />} />

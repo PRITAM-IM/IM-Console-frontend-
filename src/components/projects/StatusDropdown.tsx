@@ -16,31 +16,31 @@ const StatusDropdown = ({ value, onChange, disabled, className }: StatusDropdown
     switch (status) {
       case "Hot Lead":
         return {
-          color: "text-red-700 bg-gradient-to-r from-red-50 to-orange-50 border-red-300 shadow-sm shadow-red-100",
+          color: "text-red-700 bg-gradient-to-br from-red-50 via-orange-50 to-red-50 border-2 border-red-300 shadow-md hover:shadow-lg",
           icon: <Flame className="h-3.5 w-3.5 inline mr-1.5" />,
           label: "🔥 Hot Lead"
         };
       case "Cold Lead":
         return {
-          color: "text-blue-700 bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-300 shadow-sm shadow-blue-100",
+          color: "text-blue-700 bg-gradient-to-br from-blue-50 via-cyan-50 to-blue-50 border-2 border-blue-300 shadow-md hover:shadow-lg",
           icon: <Snowflake className="h-3.5 w-3.5 inline mr-1.5" />,
           label: "❄️ Cold Lead"
         };
       case "Junk Lead":
         return {
-          color: "text-gray-700 bg-gradient-to-r from-gray-50 to-slate-50 border-gray-300 shadow-sm shadow-gray-100",
+          color: "text-gray-700 bg-gradient-to-br from-gray-50 via-slate-50 to-gray-50 border-2 border-gray-300 shadow-md hover:shadow-lg",
           icon: <Trash2 className="h-3.5 w-3.5 inline mr-1.5" />,
           label: "🗑️ Junk Lead"
         };
       case "Closed":
         return {
-          color: "text-green-700 bg-gradient-to-r from-green-50 to-emerald-50 border-green-300 shadow-sm shadow-green-100",
+          color: "text-green-700 bg-gradient-to-br from-green-50 via-emerald-50 to-green-50 border-2 border-green-400 shadow-md hover:shadow-lg",
           icon: <CheckCircle2 className="h-3.5 w-3.5 inline mr-1.5" />,
           label: "✅ Closed"
         };
       default:
         return {
-          color: "text-slate-600 bg-white border-slate-300 hover:border-green-400 hover:bg-green-50/30 shadow-sm",
+          color: "text-slate-600 bg-gradient-to-br from-white to-slate-50 border-2 border-slate-300 hover:border-green-400 hover:shadow-md",
           icon: null,
           label: "📋 Select Status"
         };
@@ -56,16 +56,17 @@ const StatusDropdown = ({ value, onChange, disabled, className }: StatusDropdown
         onChange={(e) => onChange(e.target.value as CRMStatus)}
         disabled={disabled}
         className={cn(
-          "h-10 w-full min-w-[160px] text-xs font-bold cursor-pointer transition-all duration-200",
-          "rounded-lg px-3 py-2",
-          "focus:ring-2 focus:ring-offset-1",
+          "h-10 w-full min-w-[170px] text-xs font-bold cursor-pointer transition-all duration-300",
+          "rounded-xl px-4 py-2.5",
+          "focus:ring-2 focus:ring-offset-2",
           "disabled:opacity-50 disabled:cursor-not-allowed",
+          "hover:scale-[1.02]",
           config.color,
-          value === "Hot Lead" && "focus:ring-red-300",
-          value === "Cold Lead" && "focus:ring-blue-300",
-          value === "Junk Lead" && "focus:ring-gray-300",
-          value === "Closed" && "focus:ring-green-300",
-          !value && "focus:ring-green-300",
+          value === "Hot Lead" && "focus:ring-red-400",
+          value === "Cold Lead" && "focus:ring-blue-400",
+          value === "Junk Lead" && "focus:ring-gray-400",
+          value === "Closed" && "focus:ring-green-400",
+          !value && "focus:ring-green-400",
           className
         )}
         style={{
@@ -86,9 +87,9 @@ const StatusDropdown = ({ value, onChange, disabled, className }: StatusDropdown
         <option value="Closed" className="text-green-700 bg-white">✅ Closed</option>
       </NativeSelect>
       
-      {/* Hover indicator */}
+      {/* Enhanced Hover indicator */}
       {!disabled && (
-        <div className="absolute inset-0 rounded-lg pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 ring-2 ring-green-300/50" />
+        <div className="absolute inset-0 rounded-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 ring-2 ring-green-400/60" />
       )}
     </div>
   );

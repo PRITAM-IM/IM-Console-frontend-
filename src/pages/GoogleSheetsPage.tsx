@@ -2,18 +2,20 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { 
-  FileSpreadsheet, 
-  ExternalLink, 
-  Table, 
-  Loader2, 
+import {
+  FileSpreadsheet,
+  ExternalLink,
+  Table,
+  Loader2,
   ChevronDown,
   Search,
   Download,
   RefreshCw,
   Rows,
   Columns,
-  Filter
+  Filter,
+  Database,
+  Grid3x3
 } from "lucide-react";
 import LoadingState from "@/components/common/LoadingState";
 import ErrorState from "@/components/common/ErrorState";
@@ -47,14 +49,14 @@ const GoogleSheetsPage = () => {
   const [showConnectModal, setShowConnectModal] = useState(false);
   const [spreadsheetDetails, setSpreadsheetDetails] = useState<SpreadsheetDetails | null>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
-  
+
   // Sheet data state
   const [selectedSheet, setSelectedSheet] = useState<GoogleSheet | null>(null);
   const [sheetData, setSheetData] = useState<SheetValues | null>(null);
   const [loadingData, setLoadingData] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSheetSelector, setShowSheetSelector] = useState(false);
-  
+
   // CRM state
   const [modalState, setModalState] = useState<ModalState>({
     type: null,
@@ -172,7 +174,7 @@ const GoogleSheetsPage = () => {
 
   const handleFeedbackSave = async (notes: string) => {
     const { rowIndex, status } = modalState;
-    
+
     // Optimistic update
     const updates = new Map(optimisticUpdates);
     updates.set(rowIndex, { Status: status, Notes: notes });
@@ -197,21 +199,21 @@ const GoogleSheetsPage = () => {
 
   const handleRevenueSave = async (revenue: number, notes: string) => {
     const { rowIndex, status } = modalState;
-    
+
     // Optimistic update
     const updates = new Map(optimisticUpdates);
-    updates.set(rowIndex, { 
-      Status: status, 
-      "Revenue Generated": revenue, 
-      Notes: notes 
+    updates.set(rowIndex, {
+      Status: status,
+      "Revenue Generated": revenue,
+      Notes: notes
     });
     setOptimisticUpdates(updates);
 
     try {
-      await updateSheetRow(rowIndex, { 
-        Status: status, 
-        "Revenue Generated": revenue, 
-        Notes: notes 
+      await updateSheetRow(rowIndex, {
+        Status: status,
+        "Revenue Generated": revenue,
+        Notes: notes
       });
       toast.success(`Deal closed with $${revenue.toFixed(2)} revenue`, {
         description: "Congratulations on closing the deal!",
@@ -236,29 +238,29 @@ const GoogleSheetsPage = () => {
   const filteredData = sheetData?.values?.filter((row, index) => {
     if (index === 0) return true; // Always show header
     if (!searchQuery) return true;
-    return row.some(cell => 
+    return row.some(cell =>
       String(cell).toLowerCase().includes(searchQuery.toLowerCase())
     );
   }) || [];
 
   const headers = filteredData[0] || [];
   const rows = filteredData.slice(1);
-  
+
   // Find Status column index or mark to add it
   const statusColumnIndex = headers.findIndex(
     (h: string) => h?.toLowerCase() === "status"
   );
   const hasStatusColumn = statusColumnIndex !== -1;
-  
+
   // Enhanced headers with Status column if missing
   const displayHeaders = hasStatusColumn ? headers : [...headers, "Status"];
   const actualStatusIndex = hasStatusColumn ? statusColumnIndex : headers.length;
-  
+
   // Get cell value with optimistic updates
   const getCellValue = (rowIndex: number, colIndex: number, originalValue: any) => {
     const optimisticUpdate = optimisticUpdates.get(rowIndex);
     if (!optimisticUpdate) return originalValue;
-    
+
     const columnName = displayHeaders[colIndex];
     if (optimisticUpdate.hasOwnProperty(columnName)) {
       return optimisticUpdate[columnName];
@@ -322,138 +324,163 @@ const GoogleSheetsPage = () => {
       animate={{ opacity: 1 }}
     >
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl shadow-lg shadow-green-500/25">
-            <FileSpreadsheet className="h-8 w-8 text-white" />
+      {/* Modern Header with Stats */}
+      <div className="bg-gradient-to-br from-slate-50 via-white to-green-50/30 rounded-2xl border border-slate-200/60 p-6 shadow-sm">
+        <div className="flex flex-wrap items-start justify-between gap-6">
+          <div className="flex items-start gap-4">
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-green-400 to-emerald-500 rounded-2xl blur-lg opacity-25"></div>
+              <div className="relative p-4 bg-gradient-to-br from-green-500 via-green-600 to-emerald-600 rounded-2xl shadow-lg">
+                <FileSpreadsheet className="h-7 w-7 text-white" />
+              </div>
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900 mb-1">
+                {spreadsheetDetails?.title || "Google Sheets CRM"}
+              </h1>
+              <div className="flex items-center gap-4 text-sm text-slate-600">
+                <div className="flex items-center gap-1.5">
+                  <Grid3x3 className="h-3.5 w-3.5" />
+                  <span>{spreadsheetDetails?.sheets.length || 0} sheets</span>
+                </div>
+                <div className="w-1 h-1 rounded-full bg-slate-300"></div>
+                <div className="flex items-center gap-1.5">
+                  <Database className="h-3.5 w-3.5" />
+                  <span>{rows.length.toLocaleString()} records</span>
+                </div>
+                <div className="w-1 h-1 rounded-full bg-slate-300"></div>
+                <span>{spreadsheetDetails?.timeZone}</span>
+              </div>
+            </div>
           </div>
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900">
-              {spreadsheetDetails?.title || "Google Sheets"}
-            </h1>
-            <p className="text-sm text-slate-500">
-              {spreadsheetDetails?.sheets.length || 0} sheet(s) • {spreadsheetDetails?.timeZone}
-            </p>
+          <div className="flex items-center gap-2">
+            <ReconnectButton
+              service="google-sheets"
+              projectId={projectId || ''}
+              onReconnectSuccess={() => window.location.reload()}
+              variant="outline"
+            />
+            <a
+              href={spreadsheetDetails?.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-green-700 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl hover:from-green-100 hover:to-emerald-100 hover:border-green-300 transition-all shadow-sm hover:shadow"
+            >
+              <ExternalLink className="h-4 w-4" />
+              Open in Sheets
+            </a>
+            <Button
+              variant="outline"
+              onClick={fetchSheetData}
+              disabled={loadingData}
+              className="border-slate-300 hover:border-green-400 hover:bg-green-50 transition-all"
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${loadingData ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <ReconnectButton
-            service="google-sheets"
-            projectId={projectId || ''}
-            onReconnectSuccess={() => window.location.reload()}
-            variant="outline"
-          />
-          <a
-            href={spreadsheetDetails?.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-green-600 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
-          >
-            <ExternalLink className="h-4 w-4" />
-            Open in Sheets
-          </a>
-          <Button variant="outline" onClick={fetchSheetData} disabled={loadingData}>
-            <RefreshCw className={`h-4 w-4 mr-2 ${loadingData ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
         </div>
       </div>
 
-      {/* Sheet Selector & Search Bar */}
-      <div className="flex flex-wrap items-center gap-4">
-        {/* Sheet Selector Dropdown */}
-        <div className="relative">
-          <button
-            onClick={() => setShowSheetSelector(!showSheetSelector)}
-            className="flex items-center gap-3 px-4 py-2.5 bg-white border border-slate-200 rounded-xl hover:border-green-300 transition-colors min-w-[200px]"
-          >
-            <div className="p-1.5 bg-green-100 rounded-lg">
-              <Table className="h-4 w-4 text-green-600" />
-            </div>
-            <span className="flex-1 text-left font-medium text-slate-900">
-              {selectedSheet?.title || "Select Sheet"}
-            </span>
-            <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${showSheetSelector ? 'rotate-180' : ''}`} />
-          </button>
-
-          <AnimatePresence>
-            {showSheetSelector && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="absolute top-full left-0 mt-2 w-72 bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden"
+      {/* Enhanced Toolbar */}
+      <Card className="bg-white border-slate-200/60 shadow-sm">
+        <CardContent className="p-4">
+          <div className="flex flex-wrap items-center gap-4">
+            {/* Sheet Selector Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setShowSheetSelector(!showSheetSelector)}
+                className="flex items-center gap-3 px-4 py-2.5 bg-gradient-to-br from-slate-50 to-white border-2 border-slate-200 rounded-xl hover:border-green-400 hover:shadow-md transition-all min-w-[220px] group"
               >
-                <div className="p-2 border-b border-slate-100">
-                  <p className="text-xs font-medium text-slate-500 px-2">SELECT A SHEET</p>
+                <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg shadow-sm group-hover:shadow transition-shadow">
+                  <Table className="h-3.5 w-3.5 text-white" />
                 </div>
-                <div className="max-h-64 overflow-y-auto p-2">
-                  {spreadsheetDetails?.sheets.map((sheet) => (
-                    <button
-                      key={sheet.sheetId}
-                      onClick={() => handleSheetSelect(sheet)}
-                      className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors ${
-                        selectedSheet?.sheetId === sheet.sheetId
-                          ? 'bg-green-50 border border-green-200'
-                          : 'hover:bg-slate-50'
-                      }`}
-                    >
-                      <div className={`p-1.5 rounded-lg ${
-                        selectedSheet?.sheetId === sheet.sheetId
-                          ? 'bg-green-500'
-                          : 'bg-slate-100'
-                      }`}>
-                        <Table className={`h-4 w-4 ${
-                          selectedSheet?.sheetId === sheet.sheetId
-                            ? 'text-white'
-                            : 'text-slate-500'
-                        }`} />
-                      </div>
-                      <div className="flex-1 text-left">
-                        <p className="font-medium text-slate-900">{sheet.title}</p>
-                        <p className="text-xs text-slate-500">
-                          {sheet.rowCount.toLocaleString()} rows × {sheet.columnCount} cols
-                        </p>
-                      </div>
-                    </button>
-                  ))}
+                <span className="flex-1 text-left font-semibold text-slate-900 text-sm">
+                  {selectedSheet?.title || "Select Sheet"}
+                </span>
+                <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${showSheetSelector ? 'rotate-180' : ''}`} />
+              </button>
+
+              <AnimatePresence>
+                {showSheetSelector && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                    className="absolute top-full left-0 mt-2 w-80 bg-white border-2 border-slate-200 rounded-2xl shadow-2xl z-50 overflow-hidden"
+                  >
+                    <div className="p-3 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
+                      <p className="text-xs font-bold text-slate-600 px-2 tracking-wide">SELECT A SHEET</p>
+                    </div>
+                    <div className="max-h-72 overflow-y-auto p-2">
+                      {spreadsheetDetails?.sheets.map((sheet) => (
+                        <button
+                          key={sheet.sheetId}
+                          onClick={() => handleSheetSelect(sheet)}
+                          className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all mb-1 ${selectedSheet?.sheetId === sheet.sheetId
+                              ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 shadow-sm'
+                              : 'hover:bg-slate-50 border-2 border-transparent'
+                            }`}
+                        >
+                          <div className={`p-2 rounded-lg shadow-sm ${selectedSheet?.sheetId === sheet.sheetId
+                              ? 'bg-gradient-to-br from-green-500 to-emerald-600'
+                              : 'bg-slate-100'
+                            }`}>
+                            <Table className={`h-4 w-4 ${selectedSheet?.sheetId === sheet.sheetId
+                                ? 'text-white'
+                                : 'text-slate-500'
+                              }`} />
+                          </div>
+                          <div className="flex-1 text-left">
+                            <p className={`font-semibold ${selectedSheet?.sheetId === sheet.sheetId
+                                ? 'text-green-900'
+                                : 'text-slate-900'
+                              }`}>{sheet.title}</p>
+                            <p className="text-xs text-slate-500 font-medium">
+                              {sheet.rowCount.toLocaleString()} rows × {sheet.columnCount} cols
+                            </p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Search Bar */}
+            <div className="flex-1 relative min-w-[240px]">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Input
+                placeholder="Search records..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-11 pr-4 h-[42px] bg-white border-2 border-slate-200 rounded-xl focus:border-green-400 transition-all"
+              />
+            </div>
+
+            {/* Stats Pills */}
+            {sheetData && (
+              <div className="flex items-center gap-2 ml-auto">
+                <div className="flex items-center gap-2 px-3 py-2 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
+                  <Rows className="h-4 w-4 text-blue-600" />
+                  <span className="text-xs font-semibold text-blue-700">{rows.length.toLocaleString()} rows</span>
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* Search Bar */}
-        <div className="flex-1 relative max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <Input
-            placeholder="Search in data..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-white border-slate-200"
-          />
-        </div>
-
-        {/* Stats */}
-        {sheetData && (
-          <div className="flex items-center gap-4 text-sm text-slate-500">
-            <div className="flex items-center gap-1.5">
-              <Rows className="h-4 w-4" />
-              <span>{rows.length.toLocaleString()} rows</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <Columns className="h-4 w-4" />
-              <span>{displayHeaders.length} columns</span>
-            </div>
-            {searchQuery && (
-              <div className="flex items-center gap-1.5 text-green-600">
-                <Filter className="h-4 w-4" />
-                <span>Filtered</span>
+                <div className="flex items-center gap-2 px-3 py-2 bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 rounded-lg">
+                  <Columns className="h-4 w-4 text-purple-600" />
+                  <span className="text-xs font-semibold text-purple-700">{displayHeaders.length} cols</span>
+                </div>
+                {searchQuery && (
+                  <div className="flex items-center gap-2 px-3 py-2 bg-gradient-to-br from-green-50 to-emerald-50 border border-green-300 rounded-lg">
+                    <Filter className="h-4 w-4 text-green-600" />
+                    <span className="text-xs font-semibold text-green-700">Filtered</span>
+                  </div>
+                )}
               </div>
             )}
           </div>
-        )}
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Data Table */}
       {loadingData || loadingDetails ? (
@@ -466,44 +493,44 @@ const GoogleSheetsPage = () => {
           </CardContent>
         </Card>
       ) : sheetData && sheetData.values && sheetData.values.length > 0 ? (
-        <Card className="bg-white overflow-hidden">
+        <Card className="bg-white overflow-hidden border-slate-200/60 shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-12">
+                <tr className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-b-2 border-slate-700">
+                  <th className="px-5 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider w-16">
                     #
                   </th>
                   {displayHeaders.map((header, index) => (
                     <th
                       key={index}
-                      className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider whitespace-nowrap"
+                      className="px-5 py-4 text-left text-xs font-bold text-white uppercase tracking-wider whitespace-nowrap"
                     >
                       {header || `Column ${index + 1}`}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 bg-white">
                 {rows.map((row, rowIndex) => (
                   <motion.tr
                     key={rowIndex}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: rowIndex * 0.01 }}
-                    className="hover:bg-green-50/50 transition-colors group"
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: rowIndex * 0.01, duration: 0.2 }}
+                    className="hover:bg-gradient-to-r hover:from-green-50/60 hover:to-emerald-50/40 transition-all group border-b border-slate-50 last:border-0"
                   >
-                    <td className="px-4 py-3 text-xs text-slate-400 font-mono">
+                    <td className="px-5 py-4 text-xs text-slate-400 font-bold font-mono bg-slate-50/50 group-hover:bg-green-100/50 transition-colors">
                       {rowIndex + 1}
                     </td>
                     {displayHeaders.map((_, colIndex) => {
                       const isStatusColumn = colIndex === actualStatusIndex;
                       const cellValue = getCellValue(rowIndex, colIndex, row[colIndex]);
-                      
+
                       return (
                         <td
                           key={colIndex}
-                          className="px-4 py-3 text-sm text-slate-700 max-w-xs"
+                          className="px-5 py-4 text-sm text-slate-700 max-w-xs"
                           title={isStatusColumn ? undefined : String(cellValue || '')}
                         >
                           {isStatusColumn ? (
@@ -514,11 +541,11 @@ const GoogleSheetsPage = () => {
                             />
                           ) : (
                             cellValue !== undefined && cellValue !== null && cellValue !== '' ? (
-                              <span className="block truncate">
+                              <span className="block truncate font-medium">
                                 {String(cellValue)}
                               </span>
                             ) : (
-                              <span className="text-slate-300">—</span>
+                              <span className="text-slate-300 font-medium">—</span>
                             )
                           )}
                         </td>
@@ -530,13 +557,26 @@ const GoogleSheetsPage = () => {
             </table>
           </div>
 
-          {/* Table Footer */}
-          <div className="px-4 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
-            <p className="text-sm text-slate-500">
-              Showing {rows.length.toLocaleString()} of {(sheetData.values.length - 1).toLocaleString()} rows
-              {searchQuery && <span className="text-green-600"> (filtered)</span>}
-            </p>
-            <Button variant="outline" size="sm" className="gap-2">
+          {/* Enhanced Table Footer */}
+          <div className="px-6 py-4 bg-gradient-to-r from-slate-50 via-white to-slate-50 border-t-2 border-slate-200 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
+                <p className="text-sm font-semibold text-slate-700">
+                  Showing {rows.length.toLocaleString()} of {(sheetData.values.length - 1).toLocaleString()} records
+                </p>
+              </div>
+              {searchQuery && (
+                <span className="px-2.5 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full border border-green-300">
+                  Filtered
+                </span>
+              )}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 border-2 border-slate-300 hover:border-green-500 hover:bg-green-50 hover:text-green-700 transition-all font-semibold"
+            >
               <Download className="h-4 w-4" />
               Export
             </Button>
@@ -550,7 +590,7 @@ const GoogleSheetsPage = () => {
             </div>
             <h3 className="text-lg font-medium text-slate-900 mb-2">No data found</h3>
             <p className="text-slate-500 mb-4">
-              {selectedSheet 
+              {selectedSheet
                 ? `The sheet "${selectedSheet.title}" appears to be empty.`
                 : "Select a sheet to view its data."
               }
@@ -563,15 +603,25 @@ const GoogleSheetsPage = () => {
         </Card>
       )}
 
-      {/* Spreadsheet Info Footer */}
-      <Card className="bg-white">
+      {/* Enhanced Spreadsheet Info Footer */}
+      <Card className="bg-gradient-to-br from-slate-50 to-white border-slate-200/60 shadow-sm">
         <CardContent className="py-4">
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-slate-500">Spreadsheet ID</p>
-              <p className="font-mono text-sm text-slate-700">{project.googleSheetId}</p>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-slate-100 rounded-lg">
+                <Database className="h-4 w-4 text-slate-600" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Spreadsheet ID</p>
+                <p className="font-mono text-sm text-slate-800 font-semibold">{project.googleSheetId}</p>
+              </div>
             </div>
-            <Button variant="outline" size="sm" onClick={() => setShowConnectModal(true)}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowConnectModal(true)}
+              className="border-2 border-slate-300 hover:border-green-500 hover:bg-green-50 hover:text-green-700 transition-all font-semibold"
+            >
               Change Spreadsheet
             </Button>
           </div>
