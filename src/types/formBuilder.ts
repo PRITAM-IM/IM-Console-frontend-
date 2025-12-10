@@ -56,6 +56,16 @@ export interface FieldValidation {
   maxFileSize?: number; // in MB
 }
 
+export interface ConditionalLogic {
+  id: string;
+  triggerFieldId: string;
+  triggerCondition: 'equals' | 'not_equals' | 'contains' | 'greater_than' | 'less_than' | 'is_empty' | 'is_not_empty';
+  triggerValue?: any;
+  action: 'show' | 'hide' | 'require' | 'skip_to_page';
+  targetFieldIds?: string[];
+  targetPageId?: string;
+}
+
 export interface FormField {
   id: string;
   type: FieldType;
@@ -64,6 +74,7 @@ export interface FormField {
   description?: string;
   options?: FieldOption[]; // For multiple-choice, checkboxes, dropdown
   validation?: FieldValidation;
+  conditionalLogic?: ConditionalLogic[];
   defaultValue?: string | number | string[];
   order: number;
 }
@@ -80,6 +91,16 @@ export interface FormTheme {
   accentColor: string;
   mode: 'light' | 'dark';
   fontFamily?: string;
+  // Extended template styles
+  backgroundColor?: string;
+  cardBackground?: string;
+  textPrimary?: string;
+  textSecondary?: string;
+  borderColor?: string;
+  inputBackground?: string;
+  buttonStyle?: 'solid' | 'gradient' | 'outlined' | 'soft';
+  borderRadius?: 'sharp' | 'rounded' | 'pill';
+  spacing?: 'compact' | 'normal' | 'spacious';
 }
 
 export interface FormCoverPage {
@@ -101,6 +122,9 @@ export interface FormTemplate {
   isPublished: boolean;
   isCpsTemplate?: boolean; // Flag for CPS templates
   publishedUrl?: string;
+  publishedAt?: string;
+  viewCount?: number;
+  submissionCount?: number;
   createdAt?: string;
   updatedAt?: string;
   createdBy?: string;

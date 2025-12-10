@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useNavigate, useParams, NavLink } from "react-router-dom";
 import {
   ChevronDown,
+  ChevronUp,
   Search,
   Plus,
   LayoutDashboard,
@@ -14,7 +15,7 @@ import {
   FileSpreadsheet,
   HardDrive,
   Linkedin,
-  AlertCircle,
+
   CheckCircle2,
   XCircle,
   Link2,
@@ -22,7 +23,8 @@ import {
   ChevronRight,
   Globe,
   Star,
-  FileText
+  FileText,
+  MapPin
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -67,6 +69,13 @@ const ProjectSelector = () => {
   const [showConnectGoogleDriveModal, setShowConnectGoogleDriveModal] = useState(false);
   const [showConnectLinkedInModal, setShowConnectLinkedInModal] = useState(false);
   const [showConnectGBPModal, setShowConnectGBPModal] = useState(false);
+  
+  // Category collapse states
+  const [seoExpanded, setSeoExpanded] = useState(true);
+  const [socialsExpanded, setSocialsExpanded] = useState(true);
+  const [adsExpanded, setAdsExpanded] = useState(true);
+  const [dataExpanded, setDataExpanded] = useState(true);
+  const [reviewsExpanded, setReviewsExpanded] = useState(true);
 
   const fetchProjects = useCallback(async () => {
     try {
@@ -123,7 +132,7 @@ const ProjectSelector = () => {
       <div
         className={cn(
           "flex-shrink-0 border-r border-slate-200 flex flex-col h-full overflow-hidden relative transition-all duration-300 bg-white",
-          isCollapsed ? "w-16" : "w-64"
+          isCollapsed ? "w-16" : "w-56"
         )}
       >
         {/* Collapse Toggle Button */}
@@ -154,7 +163,7 @@ const ProjectSelector = () => {
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="start"
-                className="w-64 z-[100] bg-white border-slate-200 shadow-xl rounded-xl p-1"
+                className="w-56 z-[100] bg-white border-slate-200 shadow-xl rounded-xl p-1"
               >
                 {/* Search Bar */}
                 <div className="px-2 py-2">
@@ -254,6 +263,16 @@ const ProjectSelector = () => {
                 onConnectGoogleDrive={() => setShowConnectGoogleDriveModal(true)}
                 onConnectLinkedIn={() => setShowConnectLinkedInModal(true)}
                 onConnectGBP={() => setShowConnectGBPModal(true)}
+                seoExpanded={seoExpanded}
+                setSeoExpanded={setSeoExpanded}
+                socialsExpanded={socialsExpanded}
+                setSocialsExpanded={setSocialsExpanded}
+                adsExpanded={adsExpanded}
+                setAdsExpanded={setAdsExpanded}
+                dataExpanded={dataExpanded}
+                setDataExpanded={setDataExpanded}
+                reviewsExpanded={reviewsExpanded}
+                setReviewsExpanded={setReviewsExpanded}
               />
             )}
           </>
@@ -410,6 +429,16 @@ interface ProjectInsightsSectionProps {
   onConnectGoogleDrive: () => void;
   onConnectLinkedIn: () => void;
   onConnectGBP: () => void;
+  seoExpanded: boolean;
+  setSeoExpanded: (expanded: boolean) => void;
+  socialsExpanded: boolean;
+  setSocialsExpanded: (expanded: boolean) => void;
+  adsExpanded: boolean;
+  setAdsExpanded: (expanded: boolean) => void;
+  dataExpanded: boolean;
+  setDataExpanded: (expanded: boolean) => void;
+  reviewsExpanded: boolean;
+  setReviewsExpanded: (expanded: boolean) => void;
 }
 
 const ProjectInsightsSection = ({
@@ -425,29 +454,139 @@ const ProjectInsightsSection = ({
   onConnectGoogleSheets,
   onConnectGoogleDrive,
   onConnectLinkedIn,
-  onConnectGBP
+  onConnectGBP,
+  seoExpanded,
+  setSeoExpanded,
+  socialsExpanded,
+  setSocialsExpanded,
+  adsExpanded,
+  setAdsExpanded,
+  dataExpanded,
+  setDataExpanded,
+  reviewsExpanded,
+  setReviewsExpanded
 }: ProjectInsightsSectionProps) => {
-  const connections: ConnectionStatus[] = [
-    { label: "Google Analytics", connected: !!project?.gaPropertyId, route: `/dashboard/${projectId}/analytics`, icon: BarChart3 },
-    { label: "YouTube", connected: !!project?.youtubeChannelId, route: `/dashboard/${projectId}/youtube`, icon: Youtube },
-    { label: "Google Ads", connected: !!project?.googleAdsCustomerId, route: `/dashboard/${projectId}/ads`, icon: TrendingUp },
-    { label: "Search Console", connected: !!project?.searchConsoleSiteUrl, route: `/dashboard/${projectId}/search-console`, icon: Search },
-    { label: "Facebook Insights", connected: !!project?.facebookPageId, route: `/dashboard/${projectId}/facebook`, icon: Facebook },
-    { label: "Meta Ads", connected: !!project?.metaAdsAccountId, route: `/dashboard/${projectId}/meta-ads`, icon: Megaphone },
-    { label: "Instagram", connected: !!project?.instagram?.igUserId, route: `/dashboard/${projectId}/instagram`, icon: Instagram },
-    { label: "Google Sheets", connected: !!project?.googleSheetId, route: `/dashboard/${projectId}/sheets`, icon: FileSpreadsheet },
-    { label: "Google Drive", connected: !!project?.googleDriveFolderId, route: `/dashboard/${projectId}/drive`, icon: HardDrive },
-    { label: "LinkedIn", connected: !!project?.linkedinPageId, route: `/dashboard/${projectId}/linkedin`, icon: Linkedin },
-    { label: "Google Reviews", connected: !!project?.googleBusinessProfileLocationId, route: `/dashboard/${projectId}/reviews`, icon: Star },
-  ];
-
-  const pendingConnections = connections.filter((conn) => !conn.connected);
-  const connectedServices = connections.filter((conn) => conn.connected);
-
-  const navItems = [
-    { label: "Overview", to: `/dashboard/${projectId}`, icon: LayoutDashboard },
-    { label: "Forms CRM", to: `/dashboard/${projectId}/templates`, icon: FileText },
-    ...connectedServices.map((conn) => ({ label: conn.label, to: conn.route, icon: conn.icon })),
+  // Category definitions with their services
+  const categories = [
+    {
+      name: 'SEO',
+      expanded: seoExpanded,
+      setExpanded: setSeoExpanded,
+      services: [
+        { 
+          label: "Google Analytics", 
+          connected: !!project?.gaPropertyId, 
+          route: `/dashboard/${projectId}/analytics`, 
+          icon: BarChart3,
+          onConnect: onConnectGA
+        },
+        { 
+          label: "Search Console", 
+          connected: !!project?.searchConsoleSiteUrl, 
+          route: `/dashboard/${projectId}/search-console`, 
+          icon: Search,
+          onConnect: onConnectSearchConsole
+        },
+      ]
+    },
+    {
+      name: 'Socials',
+      expanded: socialsExpanded,
+      setExpanded: setSocialsExpanded,
+      services: [
+        { 
+          label: "Facebook Insights", 
+          connected: !!project?.facebookPageId, 
+          route: `/dashboard/${projectId}/facebook`, 
+          icon: Facebook,
+          onConnect: onConnectFacebook
+        },
+        { 
+          label: "Instagram", 
+          connected: !!project?.instagram?.igUserId, 
+          route: `/dashboard/${projectId}/instagram`, 
+          icon: Instagram,
+          onConnect: onConnectInstagram
+        },
+        { 
+          label: "LinkedIn", 
+          connected: !!project?.linkedinPageId, 
+          route: `/dashboard/${projectId}/linkedin`, 
+          icon: Linkedin,
+          onConnect: onConnectLinkedIn
+        },
+        { 
+          label: "YouTube", 
+          connected: !!project?.youtubeChannelId, 
+          route: `/dashboard/${projectId}/youtube`, 
+          icon: Youtube,
+          onConnect: onConnectYouTube
+        },
+      ]
+    },
+    {
+      name: 'ADS',
+      expanded: adsExpanded,
+      setExpanded: setAdsExpanded,
+      services: [
+        { 
+          label: "Meta Ads", 
+          connected: !!project?.metaAdsAccountId, 
+          route: `/dashboard/${projectId}/meta-ads`, 
+          icon: Megaphone,
+          onConnect: onConnectMetaAds
+        },
+        { 
+          label: "Google Ads", 
+          connected: !!project?.googleAdsCustomerId, 
+          route: `/dashboard/${projectId}/ads`, 
+          icon: TrendingUp,
+          onConnect: onConnectAds
+        },
+      ]
+    },
+    {
+      name: 'Data',
+      expanded: dataExpanded,
+      setExpanded: setDataExpanded,
+      services: [
+        { 
+          label: "Hotel CRM", 
+          connected: !!project?.googleSheetId, 
+          route: `/dashboard/${projectId}/sheets`, 
+          icon: FileSpreadsheet,
+          onConnect: onConnectGoogleSheets
+        },
+        { 
+          label: "Client Data", 
+          connected: !!project?.googleDriveFolderId, 
+          route: `/dashboard/${projectId}/drive`, 
+          icon: HardDrive,
+          onConnect: onConnectGoogleDrive
+        },
+      ]
+    },
+    {
+      name: 'Reviews',
+      expanded: reviewsExpanded,
+      setExpanded: setReviewsExpanded,
+      services: [
+        { 
+          label: "Google Reviews", 
+          connected: !!project?.googleBusinessProfileLocationId, 
+          route: `/dashboard/${projectId}/reviews`, 
+          icon: Star,
+          onConnect: onConnectGBP
+        },
+        { 
+          label: "TA Reviews", 
+          connected: false, // TODO: Add TripAdvisor connection support
+          route: `/dashboard/${projectId}/ta-reviews`, 
+          icon: MapPin,
+          onConnect: () => {} // TODO: Add TripAdvisor connect handler
+        },
+      ]
+    },
   ];
 
   return (
@@ -458,109 +597,126 @@ const ProjectInsightsSection = ({
           Project Insights
         </h3>
         <nav className="space-y-1">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.to === `/dashboard/${projectId}`}
-                className={({ isActive }) =>
-                  cn(
-                    "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
-                    isActive
-                      ? "bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25"
-                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                  )
-                }
-              >
-                <Icon className="h-4 w-4" />
-                <span>{item.label}</span>
-              </NavLink>
-            );
-          })}
+          {/* Overview */}
+          <NavLink
+            to={`/dashboard/${projectId}`}
+            end
+            className={({ isActive }) =>
+              cn(
+                "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                isActive
+                  ? "bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25"
+                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+              )
+            }
+          >
+            <LayoutDashboard className="h-4 w-4" />
+            <span>Overview</span>
+          </NavLink>
+
+          {/* Forms - Independent */}
+          <NavLink
+            to={`/dashboard/${projectId}/templates`}
+            className={({ isActive }) =>
+              cn(
+                "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                isActive
+                  ? "bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25"
+                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+              )
+            }
+          >
+            <FileText className="h-4 w-4" />
+            <span>Forms</span>
+          </NavLink>
         </nav>
       </div>
 
-      {/* Pending Connections Section */}
-      {pendingConnections.length > 0 && (
-        <div className="p-4 border-b border-slate-200">
-          <div className="flex items-center gap-2 mb-3">
-            <AlertCircle className="h-4 w-4 text-amber-500" />
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Pending Connections
-            </h3>
-          </div>
-          <div className="space-y-2">
-            {pendingConnections.map((conn) => {
-              const Icon = conn.icon;
-              const handleConnect = () => {
-                if (conn.label === "Google Analytics") onConnectGA();
-                else if (conn.label === "YouTube") onConnectYouTube();
-                else if (conn.label === "Google Ads") onConnectAds();
-                else if (conn.label === "Search Console") onConnectSearchConsole();
-                else if (conn.label === "Facebook Insights") onConnectFacebook();
-                else if (conn.label === "Meta Ads") onConnectMetaAds();
-                else if (conn.label === "Instagram") onConnectInstagram();
-                else if (conn.label === "Google Sheets") onConnectGoogleSheets();
-                else if (conn.label === "Google Drive") onConnectGoogleDrive();
-                else if (conn.label === "LinkedIn") onConnectLinkedIn();
-                else if (conn.label === "Google Reviews") onConnectGBP();
-              };
-              return (
-                <div
-                  key={conn.label}
-                  className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm bg-slate-50 border border-slate-200"
-                >
-                  <div className="relative">
-                    <Icon className="h-4 w-4 text-slate-400" />
-                    <XCircle className="h-3 w-3 absolute -top-1 -right-1 text-slate-400 bg-white rounded-full" />
-                  </div>
-                  <span className="flex-1 text-slate-600 text-xs">{conn.label}</span>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={handleConnect}
-                    className="h-6 px-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
-                  >
-                    <Link2 className="h-3 w-3 mr-1" />
-                    Connect
-                  </Button>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Connected Services Summary */}
-      {connectedServices.length > 0 && (
-        <div className="p-4 mt-auto bg-slate-50/50 border-t border-slate-200">
-          <div className="flex items-center gap-2 mb-2">
-            <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-            <h3 className="text-xs font-semibold text-slate-600">
-              Connected ({connectedServices.length}/{connections.length})
-            </h3>
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {connectedServices.map((conn) => {
-              const Icon = conn.icon;
-              return (
-                <div
-                  key={conn.label}
-                  className="flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-50 border border-emerald-200"
-                  title={conn.label}
-                >
-                  <Icon className="h-3 w-3 text-emerald-600" />
-                  <span className="text-[10px] font-medium text-emerald-700">
-                    {conn.label.split(" ")[0]}
+      {/* Category Sections */}
+      {categories.map((category) => {
+        const connectedServices = category.services.filter(s => s.connected);
+        const pendingServices = category.services.filter(s => !s.connected);
+        
+        return (
+          <div key={category.name} className="border-b border-slate-200">
+            {/* Category Header */}
+            <button
+              onClick={() => category.setExpanded(!category.expanded)}
+              className="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-50 transition-colors"
+            >
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-600">
+                {category.name}
+              </h3>
+              <div className="flex items-center gap-2">
+                {connectedServices.length > 0 && (
+                  <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold">
+                    {connectedServices.length}
                   </span>
-                </div>
-              );
-            })}
+                )}
+                {category.expanded ? (
+                  <ChevronUp className="h-3.5 w-3.5 text-slate-500" />
+                ) : (
+                  <ChevronDown className="h-3.5 w-3.5 text-slate-500" />
+                )}
+              </div>
+            </button>
+
+            {/* Category Content */}
+            {category.expanded && (
+              <div className="px-4 pb-3 space-y-1">
+                {/* Connected Services */}
+                {connectedServices.map((service) => {
+                  const Icon = service.icon;
+                  return (
+                    <NavLink
+                      key={service.label}
+                      to={service.route}
+                      className={({ isActive }) =>
+                        cn(
+                          "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                          isActive
+                            ? "bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25"
+                            : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                        )
+                      }
+                    >
+                      <Icon className="h-4 w-4" />
+                      <span className="flex-1">{service.label}</span>
+                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                    </NavLink>
+                  );
+                })}
+
+                {/* Pending Services */}
+                {pendingServices.map((service) => {
+                  const Icon = service.icon;
+                  return (
+                    <div
+                      key={service.label}
+                      className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm bg-slate-50 border border-slate-200"
+                    >
+                      <div className="relative">
+                        <Icon className="h-4 w-4 text-slate-400" />
+                        <XCircle className="h-3 w-3 absolute -top-1 -right-1 text-slate-400 bg-white rounded-full" />
+                      </div>
+                      <span className="flex-1 text-slate-600 text-xs">{service.label}</span>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={service.onConnect}
+                        className="h-6 px-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Link2 className="h-3 w-3 mr-1" />
+                        Connect
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        );
+      })}
     </div>
   );
 };
@@ -573,15 +729,15 @@ interface CollapsedProjectNavProps {
 const CollapsedProjectNav = ({ projectId, project }: CollapsedProjectNavProps) => {
   const connections: ConnectionStatus[] = [
     { label: "Google Analytics", connected: !!project?.gaPropertyId, route: `/dashboard/${projectId}/analytics`, icon: BarChart3 },
-    { label: "YouTube", connected: !!project?.youtubeChannelId, route: `/dashboard/${projectId}/youtube`, icon: Youtube },
-    { label: "Google Ads", connected: !!project?.googleAdsCustomerId, route: `/dashboard/${projectId}/ads`, icon: TrendingUp },
     { label: "Search Console", connected: !!project?.searchConsoleSiteUrl, route: `/dashboard/${projectId}/search-console`, icon: Search },
     { label: "Facebook Insights", connected: !!project?.facebookPageId, route: `/dashboard/${projectId}/facebook`, icon: Facebook },
-    { label: "Meta Ads", connected: !!project?.metaAdsAccountId, route: `/dashboard/${projectId}/meta-ads`, icon: Megaphone },
     { label: "Instagram", connected: !!project?.instagram?.igUserId, route: `/dashboard/${projectId}/instagram`, icon: Instagram },
-    { label: "Google Sheets", connected: !!project?.googleSheetId, route: `/dashboard/${projectId}/sheets`, icon: FileSpreadsheet },
-    { label: "Google Drive", connected: !!project?.googleDriveFolderId, route: `/dashboard/${projectId}/drive`, icon: HardDrive },
     { label: "LinkedIn", connected: !!project?.linkedinPageId, route: `/dashboard/${projectId}/linkedin`, icon: Linkedin },
+    { label: "YouTube", connected: !!project?.youtubeChannelId, route: `/dashboard/${projectId}/youtube`, icon: Youtube },
+    { label: "Meta Ads", connected: !!project?.metaAdsAccountId, route: `/dashboard/${projectId}/meta-ads`, icon: Megaphone },
+    { label: "Google Ads", connected: !!project?.googleAdsCustomerId, route: `/dashboard/${projectId}/ads`, icon: TrendingUp },
+    { label: "Hotel CRM", connected: !!project?.googleSheetId, route: `/dashboard/${projectId}/sheets`, icon: FileSpreadsheet },
+    { label: "Client Data", connected: !!project?.googleDriveFolderId, route: `/dashboard/${projectId}/drive`, icon: HardDrive },
     { label: "Google Reviews", connected: !!project?.googleBusinessProfileLocationId, route: `/dashboard/${projectId}/reviews`, icon: Star },
   ];
 
@@ -589,7 +745,7 @@ const CollapsedProjectNav = ({ projectId, project }: CollapsedProjectNavProps) =
 
   const navItems = [
     { label: "Overview", to: `/dashboard/${projectId}`, icon: LayoutDashboard },
-    { label: "Forms CRM", to: `/dashboard/${projectId}/templates`, icon: FileText },
+    { label: "Forms", to: `/dashboard/${projectId}/templates`, icon: FileText },
     ...connectedServices.map((conn) => ({ label: conn.label, to: conn.route, icon: conn.icon })),
   ];
 

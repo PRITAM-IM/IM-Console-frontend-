@@ -9,13 +9,20 @@ import {
   FileText,
   GripVertical,
   Trash2,
+  Palette,
+  Share2,
+
 } from "lucide-react";
-import type { FormTemplate, FormPage, FormField, FieldType } from "@/types/formBuilder";
+import type { FormTemplate, FormPage, FormField, FieldType, ConditionalLogic } from "@/types/formBuilder";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import FieldPalette from "@/components/formBuilder/FieldPalette";
 import FormCanvas from "@/components/formBuilder/FormCanvas";
 import PropertiesPanel from "@/components/formBuilder/PropertiesPanel";
+import TemplatePanel from "@/components/formBuilder/TemplatePanel";
+import type { DesignTemplate } from "@/components/formBuilder/TemplatePanel";
+
+import PublishDialog from "@/components/formBuilder/PublishDialog";
 import { FormPreviewDialog } from "@/components/formBuilder/FormPreviewDialog";
 import { cn } from "@/lib/utils";
 import { generateCPSTemplate } from "@/data/cpsTemplateData";
@@ -91,6 +98,9 @@ const TemplateBuilderPage = () => {
   const [selectedField, setSelectedField] = useState<FormField | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [showPublishDialog, setShowPublishDialog] = useState(false);
+  const [showTemplatePanel, setShowTemplatePanel] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
   const currentPage = template.pages[currentPageIndex];
 
@@ -111,6 +121,27 @@ const TemplateBuilderPage = () => {
 
     loadTemplate();
   }, [templateId, projectId, useCPS]);
+
+  // Auto-save feature - save template after changes (debounced)
+  useEffect(() => {
+    // Don't auto-save immediately on load or if it's a new unsaved template without an ID
+    if (!template._id || !projectId) return;
+
+    const autoSaveTimer = setTimeout(async () => {
+      try {
+        setIsSaving(true);
+        await formService.updateForm(projectId, template._id!, template);
+        setLastSaved(new Date());
+      } catch (error: any) {
+        console.error('Auto-save failed:', error);
+        toast.error('Auto-save failed');
+      } finally {
+        setIsSaving(false);
+      }
+    }, 2000); // Auto-save 2 seconds after last change
+
+    return () => clearTimeout(autoSaveTimer);
+  }, [template.name, template.pages, template.theme, template.coverPage]); // Dependencies: save when these change
 
   // Save template function
   const handleSave = async () => {
@@ -333,6 +364,43 @@ const TemplateBuilderPage = () => {
     return undefined;
   };
 
+  // Handle publish toggle
+  const handlePublish = async (isPublished: boolean) => {
+    if (!template._id || !projectId) {
+      toast.error('Please save the form first');
+      return;
+    }
+
+    try {
+      const updated = await formService.togglePublish(projectId, template._id, isPublished);
+      setTemplate(updated);
+    } catch (error: any) {
+      console.error('Error toggling publish:', error);
+      throw error;
+    }
+  };
+
+  // Handle logic update for a field
+  const handleLogicUpdate = (fieldId: string, logic: ConditionalLogic[]) => {
+    const updatedFields = currentPage.fields.map(field =>
+      field.id === fieldId ? { ...field, conditionalLogic: logic } : field
+    );
+    updatePage(currentPageIndex, { fields: updatedFields });
+    toast.success('Logic updated');
+  };
+
+  // Handle template application
+  const handleTemplateApply = (designTemplate: DesignTemplate) => {
+    setTemplate(prev => ({
+      ...prev,
+      theme: {
+        ...prev.theme,
+        ...designTemplate.styles
+      }
+    }));
+    toast.success(`Template "${designTemplate.name}" applied!`);
+  };
+
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-white">
       {/* Top Toolbar */}
@@ -358,12 +426,46 @@ const TemplateBuilderPage = () => {
                 onChange={(e) => setTemplate(prev => ({ ...prev, name: e.target.value }))}
                 className="text-lg font-bold border-0 focus-visible:ring-0 p-0 h-auto"
               />
-              <p className="text-xs text-slate-500">Form Template</p>
+              <div className="flex items-center gap-2">
+                <p className="text-xs text-slate-500">Form Template</p>
+                {isSaving ? (
+                  <span className="text-xs text-orange-600 flex items-center gap-1">
+                    <span className="inline-block w-1 h-1 bg-orange-600 rounded-full animate-pulse" />
+                    Saving...
+                  </span>
+                ) : lastSaved ? (
+                  <span className="text-xs text-green-600 flex items-center gap-1">
+                    <span className="inline-block w-1 h-1 bg-green-600 rounded-full" />
+                    Saved {new Date(lastSaved).toLocaleTimeString()}
+                  </span>
+                ) : null}
+              </div>
             </div>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setSelectedField(null); // Close properties panel
+              setShowTemplatePanel(true);
+            }}
+            className="gap-2"
+          >
+            <Palette className="h-4 w-4" />
+            Templates
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowPublishDialog(true)}
+            className="gap-2"
+          >
+            <Share2 className="h-4 w-4" />
+            Share
+          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -400,14 +502,16 @@ const TemplateBuilderPage = () => {
               onFieldDelete={handleFieldDelete}
               onFieldDuplicate={handleFieldDuplicate}
               selectedField={selectedField}
+              theme={template.theme}
+              onOpenTemplates={() => setShowTemplatePanel(true)}
             />
           </div>
 
-          {/* Page Tabs (Bottom) - Excel Style */}
-          <div className="bg-white border-t-2 border-slate-200 flex items-center gap-2 flex-shrink-0">
+          {/* Page Tabs (Bottom) - Compact Style */}
+          <div className="bg-slate-50 border-t border-slate-200 flex items-center gap-2 flex-shrink-0 h-10">
             {/* Scrollable tabs container */}
-            <div className="flex-1 overflow-x-auto px-4 py-2 scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100">
-              <div className="flex items-center gap-1">
+            <div className="flex-1 overflow-x-auto px-3 scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-transparent">
+              <div className="flex items-center gap-1 h-10">
                 {template.pages.map((page, index) => (
                   <PageTab
                     key={page.id}
@@ -423,26 +527,41 @@ const TemplateBuilderPage = () => {
               </div>
             </div>
             {/* Fixed Add Page button */}
-            <div className="px-4 py-2 border-l border-slate-200 flex-shrink-0">
+            <div className="px-3 border-l border-slate-200 flex-shrink-0">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={addPage}
-                className="gap-2"
+                className="gap-1.5 h-7 px-2.5 text-xs hover:bg-orange-50 hover:text-orange-600"
               >
-                <Plus className="h-4 w-4" />
+                <Plus className="h-3.5 w-3.5" />
                 Add Page
               </Button>
             </div>
           </div>
         </div>
 
-        {/* Right: Properties Panel */}
-        <PropertiesPanel
-          selectedField={selectedField}
-          onFieldUpdate={handleFieldUpdate}
-          onClose={() => setSelectedField(null)}
-        />
+        {/* Right Sidebar - Show Templates Panel, or Properties Panel when field is selected */}
+        {showTemplatePanel ? (
+          <div className="w-80 flex-shrink-0">
+            <TemplatePanel
+              template={template}
+              onTemplateApply={handleTemplateApply}
+              onClose={() => setShowTemplatePanel(false)}
+            />
+          </div>
+        ) : selectedField ? (
+          <div className="w-80 flex-shrink-0">
+            <PropertiesPanel
+              selectedField={selectedField}
+              onFieldUpdate={handleFieldUpdate}
+              onClose={() => setSelectedField(null)}
+              allPages={template.pages}
+              currentPageIndex={currentPageIndex}
+              onUpdateLogic={handleLogicUpdate}
+            />
+          </div>
+        ) : null}
       </div>
 
       {/* Preview Dialog */}
@@ -450,6 +569,14 @@ const TemplateBuilderPage = () => {
         template={template}
         isOpen={showPreview}
         onClose={() => setShowPreview(false)}
+      />
+
+      {/* Publish Dialog */}
+      <PublishDialog
+        template={template}
+        isOpen={showPublishDialog}
+        onClose={() => setShowPublishDialog(false)}
+        onPublish={handlePublish}
       />
     </div>
   );
@@ -481,10 +608,10 @@ const PageTab = ({ page, index: _index, isActive, onClick, onRename, onDelete, c
   return (
     <div
       className={cn(
-        "relative group flex items-center gap-2 px-4 py-2 rounded-t-lg border-2 border-b-0 transition-all cursor-pointer min-w-[120px]",
+        "relative group flex items-center gap-1.5 px-3 py-1.5 rounded-t border transition-all cursor-pointer min-w-[100px] h-7",
         isActive
-          ? "bg-gradient-to-br from-slate-50 to-white border-slate-300 border-b-2 border-b-white -mb-[2px] shadow-sm"
-          : "bg-slate-100 border-slate-200 hover:bg-slate-50"
+          ? "bg-white border-slate-300 border-b-white -mb-px shadow-sm z-10"
+          : "bg-slate-100 border-transparent hover:bg-slate-200"
       )}
       onClick={onClick}
       onMouseEnter={() => setShowActions(true)}
@@ -498,14 +625,14 @@ const PageTab = ({ page, index: _index, isActive, onClick, onRename, onDelete, c
           onChange={(e) => setEditName(e.target.value)}
           onBlur={handleRename}
           onKeyDown={(e) => e.key === 'Enter' && handleRename()}
-          className="h-6 text-sm border-orange-300"
+          className="h-5 text-xs border-orange-300 py-0 px-1"
           autoFocus
           onClick={(e) => e.stopPropagation()}
         />
       ) : (
         <span
           className={cn(
-            "text-sm font-semibold flex-1",
+            "text-xs font-medium flex-1 truncate",
             isActive ? "text-slate-900" : "text-slate-600"
           )}
           onDoubleClick={(e) => {
@@ -518,14 +645,14 @@ const PageTab = ({ page, index: _index, isActive, onClick, onRename, onDelete, c
       )}
 
       {showActions && !isEditing && (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center">
           {canDelete && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete();
               }}
-              className="p-1 hover:bg-red-50 rounded transition-colors"
+              className="p-0.5 hover:bg-red-50 rounded transition-colors"
             >
               <Trash2 className="h-3 w-3 text-red-600" />
             </button>

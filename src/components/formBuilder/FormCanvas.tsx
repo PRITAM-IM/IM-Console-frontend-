@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
-import { GripVertical, Trash2, Copy, Settings } from "lucide-react";
-import type { FormField, FormPage } from "@/types/formBuilder";
+import { GripVertical, Trash2, Copy, Settings, Edit2 } from "lucide-react";
+import type { FormField, FormPage, FormTheme } from "@/types/formBuilder";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -10,6 +10,8 @@ interface FormCanvasProps {
   onFieldDelete: (fieldId: string) => void;
   onFieldDuplicate: (field: FormField) => void;
   selectedField: FormField | null;
+  theme?: FormTheme;
+  onOpenTemplates?: () => void; // Make it optional
 }
 
 const FormCanvas = ({ 
@@ -17,7 +19,9 @@ const FormCanvas = ({
   onFieldSelect, 
   onFieldDelete, 
   onFieldDuplicate,
-  selectedField 
+  selectedField,
+  theme,
+  onOpenTemplates: _onOpenTemplates
 }: FormCanvasProps) => {
   
   const handleDrop = (e: React.DragEvent) => {
@@ -31,31 +35,85 @@ const FormCanvas = ({
     e.preventDefault();
   };
 
+  // Generate theme background for canvas
+  const getCanvasBackground = () => {
+    if (!theme) {
+      return { background: 'linear-gradient(to bottom right, #f8fafc, #f1f5f9)' };
+    }
+    
+    // Use custom background if provided
+    if (theme.backgroundColor) {
+      return { background: theme.backgroundColor };
+    }
+    
+    if (theme.mode === 'dark') {
+      return {
+        background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)'
+      };
+    } else {
+      // Light theme with subtle accent color tint
+      return {
+        background: `linear-gradient(135deg, #ffffff 0%, ${theme.accentColor}08 50%, #ffffff 100%)`
+      };
+    }
+  };
+
+  // Get border radius class based on theme
+  const getBorderRadiusClass = () => {
+    if (!theme?.borderRadius) return 'rounded-xl';
+    const radiusMap = {
+      'sharp': 'rounded-none',
+      'rounded': 'rounded-xl',
+      'pill': 'rounded-3xl'
+    };
+    return radiusMap[theme.borderRadius] || 'rounded-xl';
+  };
+
+  // Get card background and text colors
+  const cardBg = theme?.cardBackground || '#FFFFFF';
+  const textPrimary = theme?.textPrimary || '#0F172A';
+  const borderColor = theme?.borderColor || '#E2E8F0';
+
   return (
     <div 
-      className="h-full w-full bg-gradient-to-br from-slate-50 to-slate-100 overflow-y-auto overflow-x-hidden"
+      className="h-full w-full overflow-y-auto overflow-x-hidden flex items-start justify-center p-6"
       onDrop={handleDrop}
       onDragOver={handleDragOver}
+      style={getCanvasBackground()}
     >
-      <div className="p-8">
-        <div className="max-w-3xl mx-auto">
+      {/* Full-Width Rectangular Canvas Container */}
+      <div className="w-full h-full px-5 pb-5">
+        <div 
+          className={`shadow-lg border-2 h-full overflow-y-auto ${getBorderRadiusClass()}`}
+          style={{ 
+            backgroundColor: cardBg,
+            borderColor: borderColor
+          }}
+        >
+          <div className="p-5">
         {/* Page Header */}
-        <div className="bg-white rounded-2xl p-6 mb-6 border-2 border-slate-200 shadow-sm">
-          <h2 className="text-2xl font-bold text-slate-900">{currentPage.name}</h2>
+        <div 
+          className={`p-4 mb-4 border-2 shadow-sm ${getBorderRadiusClass()}`}
+          style={{
+            backgroundColor: cardBg,
+            borderColor: borderColor
+          }}
+        >
+          <h2 className="text-xl font-bold" style={{ color: textPrimary }}>{currentPage.name}</h2>
           {currentPage.description && (
-            <p className="text-slate-600 mt-2">{currentPage.description}</p>
+            <p className="mt-1 text-sm" style={{ color: theme?.textSecondary || '#64748B' }}>{currentPage.description}</p>
           )}
         </div>
 
         {/* Fields List */}
-        <div className="space-y-4">
+        <div className="space-y-3">
           {currentPage.fields.length === 0 ? (
-            <div className="bg-white rounded-2xl p-12 border-2 border-dashed border-slate-300 text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 mb-4">
-                <Settings className="h-8 w-8 text-slate-400" />
+            <div className="bg-white rounded-xl p-8 border-2 border-dashed border-slate-300 text-center">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-100 mb-3">
+                <Settings className="h-6 w-6 text-slate-400" />
               </div>
-              <h3 className="text-lg font-semibold text-slate-900 mb-2">No fields yet</h3>
-              <p className="text-slate-500">
+              <h3 className="text-base font-semibold text-slate-900 mb-1">No fields yet</h3>
+              <p className="text-slate-500 text-sm">
                 Drag fields from the left panel or click on a field type to add it here
               </p>
             </div>
@@ -69,29 +127,41 @@ const FormCanvas = ({
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
                   className={cn(
-                    "bg-white rounded-xl p-5 border-2 transition-all duration-200 group",
+                    "bg-white rounded-lg p-4 border-2 transition-all duration-200 group relative",
                     selectedField?.id === field.id
                       ? "border-orange-500 shadow-lg shadow-orange-500/20"
                       : "border-slate-200 hover:border-orange-300 hover:shadow-md"
                   )}
-                  onClick={() => onFieldSelect(field)}
                 >
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-2.5">
                     {/* Drag Handle */}
-                    <button className="mt-1 cursor-move opacity-0 group-hover:opacity-100 transition-opacity">
-                      <GripVertical className="h-5 w-5 text-slate-400" />
+                    <button className="mt-0.5 cursor-move opacity-0 group-hover:opacity-100 transition-opacity">
+                      <GripVertical className="h-4 w-4 text-slate-400" />
                     </button>
 
                     {/* Field Content */}
                     <div className="flex-1">
-                      <label className="block text-sm font-semibold text-slate-900 mb-2">
-                        {field.label}
-                        {field.validation?.required && (
-                          <span className="text-red-500 ml-1">*</span>
-                        )}
-                      </label>
+                      <div className="flex items-start justify-between mb-1.5">
+                        <label className="block text-sm font-semibold text-slate-900">
+                          {field.label}
+                          {field.validation?.required && (
+                            <span className="text-red-500 ml-1">*</span>
+                          )}
+                        </label>
+                        {/* Edit Icon - Always visible on hover */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onFieldSelect(field);
+                          }}
+                          className="p-1 rounded-lg opacity-0 group-hover:opacity-100 transition-all hover:bg-orange-100 text-orange-600"
+                          title="Edit field properties"
+                        >
+                          <Edit2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                       {field.description && (
-                        <p className="text-xs text-slate-500 mb-3">{field.description}</p>
+                        <p className="text-xs text-slate-500 mb-2">{field.description}</p>
                       )}
                       
                       {/* Field Preview based on type */}
@@ -107,9 +177,10 @@ const FormCanvas = ({
                           e.stopPropagation();
                           onFieldDuplicate(field);
                         }}
-                        className="h-8 w-8 p-0"
+                        className="h-7 w-7 p-0"
+                        title="Duplicate field"
                       >
-                        <Copy className="h-4 w-4 text-slate-600" />
+                        <Copy className="h-3.5 w-3.5 text-slate-600" />
                       </Button>
                       <Button
                         variant="ghost"
@@ -118,9 +189,10 @@ const FormCanvas = ({
                           e.stopPropagation();
                           onFieldDelete(field.id);
                         }}
-                        className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
+                        className="h-7 w-7 p-0 hover:bg-red-50 hover:text-red-600"
+                        title="Delete field"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3.5 w-3.5" />
                       </Button>
                     </div>
                   </div>
@@ -128,6 +200,7 @@ const FormCanvas = ({
               ))
           )}
         </div>
+          </div>
         </div>
       </div>
     </div>

@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { 
-  Facebook as FacebookIcon, 
-  Link2, 
-  Users, 
-  Eye, 
-  ThumbsUp, 
+import {
+  Facebook as FacebookIcon,
+  Link2,
+  Users,
+  Eye,
+  ThumbsUp,
   Heart,
   MessageCircle,
   TrendingUp,
@@ -19,13 +19,13 @@ import {
   Video,
   FileText
 } from "lucide-react";
-import { 
-  LineChart, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  Tooltip, 
-  ResponsiveContainer, 
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
   Legend,
   PieChart,
   Pie,
@@ -289,12 +289,12 @@ const FacebookPage = () => {
   };
 
   return (
-    <motion.section 
+    <motion.section
       className="space-y-6"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
     >
-      {/* Header - DM Cockpit Style */}
+      {/* Header - IM Console Style */}
       <div className="flex flex-wrap items-center justify-between gap-4 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 rounded-xl p-4 text-white">
         <div className="flex items-center gap-4">
           <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
@@ -420,7 +420,7 @@ const FacebookPage = () => {
             </motion.div>
           </div>
 
-          {/* Page Engagement Chart - DM Cockpit Style */}
+          {/* Page Engagement Chart - IM Console Style */}
           <Card className="bg-white border border-slate-200">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg text-slate-900">Page Engagement</CardTitle>
@@ -430,20 +430,20 @@ const FacebookPage = () => {
                 <ResponsiveContainer width="100%" height={280}>
                   <LineChart data={timeSeries} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis 
-                      dataKey="date" 
+                    <XAxis
+                      dataKey="date"
                       tickFormatter={formatDate}
                       tick={{ fontSize: 11, fill: '#64748b' }}
                       axisLine={{ stroke: '#e2e8f0' }}
                     />
-                    <YAxis 
+                    <YAxis
                       tick={{ fontSize: 11, fill: '#64748b' }}
                       axisLine={{ stroke: '#e2e8f0' }}
                       tickFormatter={(v) => formatNumber(v)}
                     />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'white', 
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'white',
                         border: '1px solid #e2e8f0',
                         borderRadius: '8px',
                         fontSize: '12px',
@@ -452,8 +452,8 @@ const FacebookPage = () => {
                       labelFormatter={formatFullDate}
                       formatter={(value: any, name: string) => [formatNumber(value), name]}
                     />
-                    <Legend 
-                      verticalAlign="top" 
+                    <Legend
+                      verticalAlign="top"
                       align="right"
                       iconType="circle"
                       wrapperStyle={{ fontSize: '12px', paddingBottom: '10px' }}
@@ -476,7 +476,7 @@ const FacebookPage = () => {
             </CardContent>
           </Card>
 
-          {/* Follows/Unfollows and Reach Charts - DM Cockpit Style */}
+          {/* Follows/Unfollows and Reach Charts - IM Console Style */}
           <div className="grid lg:grid-cols-2 gap-6">
             {/* Follows/Unfollows Chart */}
             <Card className="bg-white border border-slate-200">
@@ -490,17 +490,17 @@ const FacebookPage = () => {
                   <ResponsiveContainer width="100%" height={220}>
                     <BarChart data={followData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                      <XAxis 
-                        dataKey="date" 
+                      <XAxis
+                        dataKey="date"
                         tickFormatter={formatDate}
                         tick={{ fontSize: 11, fill: '#64748b' }}
                         axisLine={{ stroke: '#e2e8f0' }}
                       />
-                      <YAxis 
+                      <YAxis
                         tick={{ fontSize: 11, fill: '#64748b' }}
                         axisLine={{ stroke: '#e2e8f0' }}
                       />
-                      <Tooltip 
+                      <Tooltip
                         contentStyle={{ backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '12px' }}
                         labelFormatter={formatFullDate}
                       />
@@ -546,7 +546,7 @@ const FacebookPage = () => {
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                         </Pie>
-                        <Tooltip 
+                        <Tooltip
                           contentStyle={{ backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '12px' }}
                           formatter={(value: any) => [formatNumber(value), 'Users']}
                         />
@@ -578,28 +578,26 @@ const FacebookPage = () => {
             </Card>
           </div>
 
-          {/* Posts Table - DM Cockpit Style */}
+          {/* Posts Table - IM Console Style */}
           <Card className="bg-white border border-slate-200">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <div className="flex gap-2">
                   <button
                     onClick={() => setActiveTab('posts')}
-                    className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                      activeTab === 'posts'
+                    className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeTab === 'posts'
                         ? 'bg-blue-600 text-white'
                         : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                    }`}
+                      }`}
                   >
                     Post
                   </button>
                   <button
                     onClick={() => setActiveTab('stories')}
-                    className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                      activeTab === 'stories'
+                    className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeTab === 'stories'
                         ? 'bg-blue-600 text-white'
                         : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                    }`}
+                      }`}
                   >
                     Story
                   </button>
@@ -632,9 +630,9 @@ const FacebookPage = () => {
                           <tr key={post.id || index} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                             <td className="px-4 py-3">
                               {post.thumbnailUrl ? (
-                                <img 
-                                  src={post.thumbnailUrl} 
-                                  alt="" 
+                                <img
+                                  src={post.thumbnailUrl}
+                                  alt=""
                                   className="w-10 h-10 rounded-lg object-cover bg-slate-100"
                                   onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                                 />
@@ -652,9 +650,9 @@ const FacebookPage = () => {
                                     {post.message.length > 50 && (
                                       <>
                                         ...{' '}
-                                        <a 
-                                          href={post.permalink} 
-                                          target="_blank" 
+                                        <a
+                                          href={post.permalink}
+                                          target="_blank"
                                           rel="noopener noreferrer"
                                           className="text-blue-600 hover:underline"
                                         >

@@ -69,7 +69,7 @@ export interface OverviewMetrics {
   bounceRate: number;
   screenPageViews?: number;
   sessionsPerUser?: number;
-  // Additional metrics matching DM Cockpit
+  // Additional metrics matching IM Console
   engagementRate?: number;
   averageSessionDuration?: number;
   engagedSessions?: number;

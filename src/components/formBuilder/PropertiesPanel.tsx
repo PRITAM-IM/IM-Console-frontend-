@@ -1,29 +1,34 @@
-import { X, Plus, Trash2 } from "lucide-react";
-import type { FormField, FieldOption } from "@/types/formBuilder";
+import { X, Plus, Trash2, ChevronDown, ChevronRight, Zap } from "lucide-react";
+import type { FormField, FieldOption, FormPage, ConditionalLogic } from "@/types/formBuilder";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { useState } from "react";
 
 interface PropertiesPanelProps {
   selectedField: FormField | null;
   onFieldUpdate: (field: FormField) => void;
   onClose: () => void;
+  allPages?: FormPage[];
+  currentPageIndex?: number;
+  onUpdateLogic?: (fieldId: string, logic: ConditionalLogic[]) => void;
 }
 
-const PropertiesPanel = ({ selectedField, onFieldUpdate, onClose }: PropertiesPanelProps) => {
+const PropertiesPanel = ({ 
+  selectedField, 
+  onFieldUpdate, 
+  onClose,
+  allPages,
+  currentPageIndex,
+  onUpdateLogic 
+}: PropertiesPanelProps) => {
+  const [showLogicSection, setShowLogicSection] = useState(false);
+  
+  // Hide panel when no field is selected
   if (!selectedField) {
-    return (
-      <div className="w-80 border-l border-slate-200 bg-white flex flex-col items-center justify-center p-8">
-        <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 mb-4">
-            <X className="h-8 w-8 text-slate-400" />
-          </div>
-          <p className="text-sm text-slate-500">Select a field to edit its properties</p>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   const hasOptions = ['multiple-choice', 'checkboxes', 'dropdown'].includes(selectedField.type);
@@ -246,6 +251,204 @@ const PropertiesPanel = ({ selectedField, onFieldUpdate, onClose }: PropertiesPa
             </>
           )}
         </div>
+
+        {/* Conditional Logic Section - Collapsible */}
+        {allPages && onUpdateLogic && (
+          <div className="border-t-2 border-slate-200 pt-4 mt-4">
+            <button
+              onClick={() => setShowLogicSection(!showLogicSection)}
+              className="w-full flex items-center justify-between p-3 hover:bg-purple-50 rounded-lg transition-colors group"
+            >
+              <div className="flex items-center gap-2">
+                <Zap className="h-4 w-4 text-purple-600" />
+                <span className="font-semibold text-slate-900">Conditional Logic</span>
+              </div>
+              {showLogicSection ? (
+                <ChevronDown className="h-4 w-4 text-slate-500 group-hover:text-purple-600" />
+              ) : (
+                <ChevronRight className="h-4 w-4 text-slate-500 group-hover:text-purple-600" />
+              )}
+            </button>
+
+            {showLogicSection && (
+              <div className="mt-3 space-y-3">
+                <p className="text-sm text-slate-600 px-3">
+                  Show/hide this field based on user responses
+                </p>
+                
+                {/* Display existing logic rules */}
+                <div className="space-y-3">
+                  {selectedField.conditionalLogic && selectedField.conditionalLogic.length > 0 ? (
+                    selectedField.conditionalLogic.map((rule, index) => {
+                      const currentPage = allPages[currentPageIndex || 0];
+
+                      
+                      return (
+                        <div key={rule.id} className="p-4 bg-purple-50/50 rounded-lg border border-purple-200 space-y-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-semibold text-purple-700">Rule {index + 1}</span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                const updatedLogic = selectedField.conditionalLogic?.filter(r => r.id !== rule.id) || [];
+                                onUpdateLogic(selectedField.id, updatedLogic);
+                                onFieldUpdate({
+                                  ...selectedField,
+                                  conditionalLogic: updatedLogic
+                                });
+                              }}
+                              className="h-6 w-6 p-0 hover:bg-red-50 hover:text-red-600"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+
+                          {/* Trigger Field */}
+                          <div>
+                            <Label className="text-xs font-medium text-slate-700">When field</Label>
+                            <select
+                              value={rule.triggerFieldId}
+                              onChange={(e) => {
+                                const updatedLogic = selectedField.conditionalLogic?.map(r =>
+                                  r.id === rule.id ? { ...r, triggerFieldId: e.target.value } : r
+                                ) || [];
+                                onUpdateLogic(selectedField.id, updatedLogic);
+                                onFieldUpdate({
+                                  ...selectedField,
+                                  conditionalLogic: updatedLogic
+                                });
+                              }}
+                              className="w-full mt-1 px-3 py-2 text-sm border-2 border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                            >
+                              {currentPage.fields
+                                .filter(f => f.id !== selectedField.id)
+                                .map(f => (
+                                  <option key={f.id} value={f.id}>{f.label}</option>
+                                ))}
+                            </select>
+                          </div>
+
+                          {/* Condition */}
+                          <div>
+                            <Label className="text-xs font-medium text-slate-700">Condition</Label>
+                            <select
+                              value={rule.triggerCondition}
+                              onChange={(e) => {
+                                const updatedLogic = selectedField.conditionalLogic?.map(r =>
+                                  r.id === rule.id ? { ...r, triggerCondition: e.target.value as any } : r
+                                ) || [];
+                                onUpdateLogic(selectedField.id, updatedLogic);
+                                onFieldUpdate({
+                                  ...selectedField,
+                                  conditionalLogic: updatedLogic
+                                });
+                              }}
+                              className="w-full mt-1 px-3 py-2 text-sm border-2 border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                            >
+                              <option value="equals">Equals</option>
+                              <option value="not_equals">Does not equal</option>
+                              <option value="contains">Contains</option>
+                              <option value="greater_than">Greater than</option>
+                              <option value="less_than">Less than</option>
+                              <option value="is_empty">Is empty</option>
+                              <option value="is_not_empty">Is not empty</option>
+                            </select>
+                          </div>
+
+                          {/* Value (only for certain conditions) */}
+                          {!['is_empty', 'is_not_empty'].includes(rule.triggerCondition) && (
+                            <div>
+                              <Label className="text-xs font-medium text-slate-700">Value</Label>
+                              <Input
+                                value={rule.triggerValue || ''}
+                                onChange={(e) => {
+                                  const updatedLogic = selectedField.conditionalLogic?.map(r =>
+                                    r.id === rule.id ? { ...r, triggerValue: e.target.value } : r
+                                  ) || [];
+                                  onUpdateLogic(selectedField.id, updatedLogic);
+                                  onFieldUpdate({
+                                    ...selectedField,
+                                    conditionalLogic: updatedLogic
+                                  });
+                                }}
+                                placeholder="Enter value..."
+                                className="mt-1 text-sm border-2"
+                              />
+                            </div>
+                          )}
+
+                          {/* Action */}
+                          <div>
+                            <Label className="text-xs font-medium text-slate-700">Then</Label>
+                            <select
+                              value={rule.action}
+                              onChange={(e) => {
+                                const updatedLogic = selectedField.conditionalLogic?.map(r =>
+                                  r.id === rule.id ? { ...r, action: e.target.value as any } : r
+                                ) || [];
+                                onUpdateLogic(selectedField.id, updatedLogic);
+                                onFieldUpdate({
+                                  ...selectedField,
+                                  conditionalLogic: updatedLogic
+                                });
+                              }}
+                              className="w-full mt-1 px-3 py-2 text-sm border-2 border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                            >
+                              <option value="show">Show this field</option>
+                              <option value="hide">Hide this field</option>
+                              <option value="require">Make this field required</option>
+                            </select>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="text-sm text-slate-500 italic px-3">
+                      No logic rules yet
+                    </div>
+                  )}
+                </div>
+                
+                {/* Add Logic Rule Button */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full gap-2"
+                  onClick={() => {
+                    const currentPage = allPages[currentPageIndex || 0];
+                    const availableFields = currentPage.fields.filter(f => f.id !== selectedField.id);
+                    
+                    if (availableFields.length > 0) {
+                      const newRule: ConditionalLogic = {
+                        id: `logic-${Date.now()}`,
+                        triggerFieldId: availableFields[0].id,
+                        triggerCondition: 'equals',
+                        triggerValue: '',
+                        action: 'show',
+                        targetFieldIds: [selectedField.id]
+                      };
+                      
+                      const updatedLogic = [
+                        ...(selectedField.conditionalLogic || []),
+                        newRule
+                      ];
+                      
+                      onUpdateLogic(selectedField.id, updatedLogic);
+                      onFieldUpdate({
+                        ...selectedField,
+                        conditionalLogic: updatedLogic
+                      });
+                    }
+                  }}
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Logic Rule
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

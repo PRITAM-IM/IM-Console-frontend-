@@ -18,6 +18,53 @@ export const FormPreviewDialog: React.FC<FormPreviewDialogProps> = ({ template, 
     const totalPages = template.pages.length;
     const progressPercentage = ((currentPageIndex + 1) / totalPages) * 100;
 
+    // Theme settings
+    const accentColor = template.theme?.accentColor || '#f97316';
+    const isDarkMode = template.theme?.mode === 'dark';
+    const backgroundColor = template.theme?.backgroundColor;
+
+    const textPrimary = template.theme?.textPrimary || (isDarkMode ? '#F1F5F9' : '#0F172A');
+
+    const borderColor = template.theme?.borderColor || (isDarkMode ? '#334155' : '#E2E8F0');
+    const inputBackground = template.theme?.inputBackground || (isDarkMode ? '#1E293B' : '#F9FAFB');
+
+    const borderRadius = template.theme?.borderRadius || 'rounded';
+
+    
+    // Border radius classes
+    const radiusMap = {
+        'sharp': 'rounded-none',
+        'rounded': 'rounded-xl',
+        'pill': 'rounded-3xl'
+    };
+    const borderRadiusClass = radiusMap[borderRadius];
+
+    
+
+
+    
+    // Generate theme background - full page background based on theme
+    const getThemeBackground = () => {
+        // Use custom background if provided
+        if (backgroundColor) {
+            return { background: backgroundColor };
+        }
+        
+        if (isDarkMode) {
+            // For dark themes, create a dark gradient background
+            return {
+                background: `linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)`
+            };
+        } else {
+            // For light themes, use a very subtle gradient with the accent color
+            return {
+                background: `linear-gradient(135deg, #ffffff 0%, ${accentColor}08 50%, #ffffff 100%)`
+            };
+        }
+    };
+    
+    
+
     const handleFieldChange = (fieldId: string, value: any) => {
         setFormData((prev) => ({ ...prev, [fieldId]: value }));
     };
@@ -45,29 +92,52 @@ export const FormPreviewDialog: React.FC<FormPreviewDialogProps> = ({ template, 
             case 'phone':
             case 'url':
                 return (
-                    <div className="bg-white rounded-lg border-2 border-slate-200 focus-within:border-orange-400 focus-within:shadow-sm transition-all">
+                    <div 
+                        className={`border-2 focus-within:shadow-sm transition-all ${borderRadiusClass}`}
+                        style={{ 
+                            backgroundColor: inputBackground,
+                            borderColor: borderColor
+                        }}
+                        onFocus={(e) => {
+                            (e.currentTarget as HTMLDivElement).style.borderColor = accentColor;
+                        }}
+                        onBlur={(e) => {
+                            (e.currentTarget as HTMLDivElement).style.borderColor = borderColor;
+                        }}
+                    >
                         <input
                             type={field.type === 'email' ? 'email' : field.type === 'phone' ? 'tel' : field.type === 'url' ? 'url' : 'text'}
                             value={value}
                             onChange={(e) => handleFieldChange(field.id, e.target.value)}
-                            placeholder={field.placeholder}
-                            className="w-full px-4 py-3.5 bg-transparent border-0 focus:outline-none text-slate-900 placeholder:text-slate-400 text-base"
-                            required={field.validation?.required}
-                            autoComplete="off"
+                            placeholder={field.placeholder || 'Type your answer...'}
+                            className="w-full px-4 py-3 bg-transparent border-0 focus:outline-none"
+                            style={{ color: textPrimary }}
                         />
                     </div>
                 );
 
             case 'long-text':
                 return (
-                    <div className="bg-white rounded-lg border-2 border-slate-200 focus-within:border-orange-400 focus-within:shadow-sm transition-all">
+                    <div 
+                        className={`border-2 focus-within:shadow-sm transition-all ${borderRadiusClass}`}
+                        style={{ 
+                            backgroundColor: inputBackground,
+                            borderColor: borderColor
+                        }}
+                        onFocus={(e) => {
+                            (e.currentTarget as HTMLDivElement).style.borderColor = accentColor;
+                        }}
+                        onBlur={(e) => {
+                            (e.currentTarget as HTMLDivElement).style.borderColor = borderColor;
+                        }}
+                    >
                         <textarea
                             value={value}
                             onChange={(e) => handleFieldChange(field.id, e.target.value)}
-                            placeholder={field.placeholder}
+                            placeholder={field.placeholder || 'Type your answer...'}
                             rows={4}
-                            className="w-full px-4 py-3.5 bg-transparent border-0 focus:outline-none resize-none text-slate-900 placeholder:text-slate-400 text-base"
-                            required={field.validation?.required}
+                            className="w-full px-4 py-3 bg-transparent border-0 focus:outline-none resize-none"
+                            style={{ color: textPrimary }}
                         />
                     </div>
                 );
@@ -91,26 +161,37 @@ export const FormPreviewDialog: React.FC<FormPreviewDialogProps> = ({ template, 
             case 'multiple-choice':
                 return (
                     <div className="space-y-2.5 mt-3">
-                        {field.options?.map((option) => (
-                            <label
-                                key={option.id}
-                                className={`flex items-center gap-3.5 p-4 rounded-lg border-2 cursor-pointer transition-all ${value === option.value
-                                        ? 'border-orange-500 bg-orange-50 shadow-sm'
-                                        : 'border-slate-200 hover:border-orange-300 hover:bg-slate-50'
+                        {field.options?.map((option) => {
+                            const isSelected = value === option.value;
+                            return (
+                                <label
+                                    key={option.id}
+                                    className={`flex items-center gap-3.5 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                                        isSelected
+                                            ? 'shadow-sm'
+                                            : (isDarkMode ? 'border-slate-600 hover:border-slate-500 hover:bg-slate-700' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50')
                                     }`}
-                            >
-                                <input
-                                    type="radio"
-                                    name={field.id}
-                                    value={option.value}
-                                    checked={value === option.value}
-                                    onChange={(e) => handleFieldChange(field.id, e.target.value)}
-                                    className="w-4 h-4 text-orange-600 focus:ring-2 focus:ring-orange-500 cursor-pointer"
-                                    required={field.validation?.required}
-                                />
-                                <span className="text-slate-800 text-base font-medium flex-1">{option.label}</span>
-                            </label>
-                        ))}
+                                    style={{
+                                        borderColor: isSelected ? accentColor : undefined,
+                                        backgroundColor: isSelected ? `${accentColor}15` : undefined,
+                                    }}
+                                >
+                                    <input
+                                        type="radio"
+                                        name={field.id}
+                                        value={option.value}
+                                        checked={isSelected}
+                                        onChange={(e) => handleFieldChange(field.id, e.target.value)}
+                                        className="w-4 h-4 focus:ring-2 cursor-pointer"
+                                        style={{
+                                            accentColor: accentColor,
+                                        }}
+                                        required={field.validation?.required}
+                                    />
+                                    <span className={`text-base font-medium flex-1 ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>{option.label}</span>
+                                </label>
+                            );
+                        })}
                     </div>
                 );
 
@@ -219,13 +300,17 @@ export const FormPreviewDialog: React.FC<FormPreviewDialogProps> = ({ template, 
     };
 
     return (
-        <div className="fixed inset-0 z-50 bg-slate-50 flex flex-col">
+        <div className={`fixed inset-0 z-50 flex flex-col ${isDarkMode ? 'bg-slate-900' : 'bg-slate-50'}`}>
             {/* Header */}
-            <div className="flex-shrink-0 bg-white border-b border-slate-200 shadow-sm">
+            <div className={`flex-shrink-0 border-b shadow-sm ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
                 <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
                     <button
                         onClick={onClose}
-                        className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors"
+                        className={`flex items-center gap-2 transition-colors ${
+                            isDarkMode 
+                                ? 'text-slate-400 hover:text-slate-200' 
+                                : 'text-slate-600 hover:text-slate-900'
+                        }`}
                     >
                         <X className="h-5 w-5" />
                         <span className="font-medium text-sm">Close Preview</span>
@@ -234,16 +319,19 @@ export const FormPreviewDialog: React.FC<FormPreviewDialogProps> = ({ template, 
                     {/* Progress indicator */}
                     {totalPages > 1 && (
                         <div className="flex items-center gap-3">
-                            <span className="text-sm font-medium text-slate-600">
+                            <span className={`text-sm font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
                                 {currentPageIndex + 1} / {totalPages}
                             </span>
-                            <div className="w-32 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                            <div className={`w-32 h-1.5 rounded-full overflow-hidden ${isDarkMode ? 'bg-slate-700' : 'bg-slate-200'}`}>
                                 <div
-                                    className="h-full bg-gradient-to-r from-orange-500 to-red-500 transition-all duration-500 ease-out"
-                                    style={{ width: `${progressPercentage}%` }}
+                                    className="h-full transition-all duration-500 ease-out"
+                                    style={{ 
+                                        width: `${progressPercentage}%`,
+                                        background: `linear-gradient(to right, ${accentColor}, ${accentColor}dd)`
+                                    }}
                                 />
                             </div>
-                            <span className="text-sm font-bold text-orange-600 min-w-[2.5rem] text-right">
+                            <span className="text-sm font-bold min-w-[2.5rem] text-right" style={{ color: accentColor }}>
                                 {Math.round(progressPercentage)}%
                             </span>
                         </div>
@@ -252,12 +340,14 @@ export const FormPreviewDialog: React.FC<FormPreviewDialogProps> = ({ template, 
             </div>
 
             {/* Scrollable Form Content */}
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto" style={getThemeBackground()}>
                 <div className="min-h-full">
                     <div className="max-w-2xl mx-auto px-6 py-10">
                         {/* Cover Page */}
                         {currentPageIndex === 0 && template.coverPage?.showCover && (
-                            <div className="mb-12 bg-white rounded-2xl p-8 shadow-sm border border-slate-200">
+                            <div className={`mb-12 rounded-2xl p-8 shadow-sm border ${
+                                isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'
+                            }`}>
                                 {template.coverPage.imageUrl && (
                                     <img
                                         src={template.coverPage.imageUrl}
@@ -265,11 +355,11 @@ export const FormPreviewDialog: React.FC<FormPreviewDialogProps> = ({ template, 
                                         className="w-full h-64 object-cover rounded-xl mb-6"
                                     />
                                 )}
-                                <h1 className="text-4xl font-bold text-slate-900 mb-4 leading-tight">
+                                <h1 className={`text-4xl font-bold mb-4 leading-tight ${isDarkMode ? 'text-slate-100' : 'text-slate-900'}`}>
                                     {template.coverPage.title || template.name}
                                 </h1>
                                 {template.coverPage.description && (
-                                    <p className="text-lg text-slate-600 leading-relaxed">{template.coverPage.description}</p>
+                                    <p className={`text-lg leading-relaxed ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>{template.coverPage.description}</p>
                                 )}
                             </div>
                         )}
@@ -278,44 +368,56 @@ export const FormPreviewDialog: React.FC<FormPreviewDialogProps> = ({ template, 
                         <div className="space-y-6">
                             {/* Page Title */}
                             {!(currentPageIndex === 0 && template.coverPage?.showCover) && (
-                                <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-200 mb-6">
-                                    <h2 className="text-3xl font-bold text-slate-900 mb-2 leading-tight">{currentPage.name}</h2>
+                                <div className={`rounded-2xl p-8 shadow-sm border mb-6 ${
+                                    isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'
+                                }`}>
+                                    <h2 className={`text-3xl font-bold mb-2 leading-tight ${isDarkMode ? 'text-slate-100' : 'text-slate-900'}`}>{currentPage.name}</h2>
                                     {currentPage.description && (
-                                        <p className="text-base text-slate-600 leading-relaxed mt-3">{currentPage.description}</p>
+                                        <p className={`text-base leading-relaxed mt-3 ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>{currentPage.description}</p>
                                     )}
                                 </div>
                             )}
 
                             {/* Fields */}
                             {currentPage.fields.length === 0 ? (
-                                <div className="bg-white rounded-2xl p-16 shadow-sm border border-slate-200 text-center">
-                                    <div className="inline-flex items-center justify-center w-16 h-16 bg-slate-100 rounded-xl mb-4">
+                                <div className={`rounded-2xl p-16 shadow-sm border text-center ${
+                                    isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'
+                                }`}>
+                                    <div className={`inline-flex items-center justify-center w-16 h-16 rounded-xl mb-4 ${
+                                        isDarkMode ? 'bg-slate-700' : 'bg-slate-100'
+                                    }`}>
                                         <span className="text-3xl">📝</span>
                                     </div>
-                                    <p className="text-slate-400 text-base">No fields on this page</p>
+                                    <p className={`text-base ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>No fields on this page</p>
                                 </div>
                             ) : (
                                 <div className="space-y-6">
                                     {currentPage.fields
                                         .sort((a, b) => a.order - b.order)
                                         .map((field, index) => (
-                                            <div key={field.id} className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+                                            <div key={field.id} className={`rounded-xl p-6 shadow-sm border ${
+                                                isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'
+                                            }`}>
                                                 {field.type !== 'heading' && field.type !== 'paragraph' && field.type !== 'divider' ? (
                                                     <div className="space-y-3">
                                                         <label className="block">
                                                             <div className="flex items-start gap-2 mb-3">
-                                                                <span className="text-orange-500 font-bold text-sm mt-0.5">
+                                                                <span className="font-bold text-sm mt-0.5" style={{ color: accentColor }}>
                                                                     {index + 1}.
                                                                 </span>
                                                                 <div className="flex-1">
-                                                                    <span className="text-base font-semibold text-slate-900 block leading-relaxed">
+                                                                    <span className={`text-base font-semibold block leading-relaxed ${
+                                                                        isDarkMode ? 'text-slate-100' : 'text-slate-900'
+                                                                    }`}>
                                                                         {field.label}
                                                                         {field.validation?.required && (
-                                                                            <span className="text-orange-500 ml-1">*</span>
+                                                                            <span style={{ color: accentColor }} className="ml-1">*</span>
                                                                         )}
                                                                     </span>
                                                                     {field.description && (
-                                                                        <p className="text-slate-600 text-sm mt-1.5 leading-relaxed">
+                                                                        <p className={`text-sm mt-1.5 leading-relaxed ${
+                                                                            isDarkMode ? 'text-slate-400' : 'text-slate-600'
+                                                                        }`}>
                                                                             {field.description}
                                                                         </p>
                                                                     )}
@@ -340,12 +442,16 @@ export const FormPreviewDialog: React.FC<FormPreviewDialogProps> = ({ template, 
             </div>
 
             {/* Fixed Footer Navigation */}
-            <div className="flex-shrink-0 bg-white border-t border-slate-200 shadow-lg">
+            <div className={`flex-shrink-0 border-t shadow-lg ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
                 <div className="max-w-2xl mx-auto px-6 py-4 flex items-center justify-between">
                     {currentPageIndex > 0 ? (
                         <button
                             onClick={handlePrevious}
-                            className="flex items-center gap-2 px-5 py-2.5 text-slate-700 hover:bg-slate-100 rounded-lg transition-all font-medium"
+                            className={`flex items-center gap-2 px-5 py-2.5 rounded-lg transition-all font-medium ${
+                                isDarkMode
+                                    ? 'text-slate-300 hover:bg-slate-700'
+                                    : 'text-slate-700 hover:bg-slate-100'
+                            }`}
                         >
                             <ChevronLeft className="h-4 w-4" />
                             Previous
@@ -357,7 +463,10 @@ export const FormPreviewDialog: React.FC<FormPreviewDialogProps> = ({ template, 
                     {currentPageIndex < totalPages - 1 ? (
                         <button
                             onClick={handleNext}
-                            className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white rounded-lg transition-all font-semibold shadow-md hover:shadow-lg"
+                            className="flex items-center gap-2 px-6 py-2.5 text-white rounded-lg transition-all font-semibold shadow-md hover:shadow-lg"
+                            style={{ 
+                                background: `linear-gradient(to right, ${accentColor}, ${accentColor}cc)`,
+                            }}
                         >
                             Next
                             <ChevronRight className="h-4 w-4" />
@@ -365,7 +474,10 @@ export const FormPreviewDialog: React.FC<FormPreviewDialogProps> = ({ template, 
                     ) : (
                         <button
                             onClick={() => alert('Form preview - submission disabled')}
-                            className="px-6 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-lg transition-all font-semibold shadow-md hover:shadow-lg"
+                            className="px-6 py-2.5 text-white rounded-lg transition-all font-semibold shadow-md hover:shadow-lg"
+                            style={{ 
+                                background: `linear-gradient(to right, ${accentColor}, ${accentColor}cc)`,
+                            }}
                         >
                             Submit
                         </button>

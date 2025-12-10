@@ -28,7 +28,9 @@ import {
   Sliders,
   Minus,
   Video,
-  Home
+  Home,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import type { FieldType } from "@/types/formBuilder";
 import { cn } from "@/lib/utils";
@@ -303,6 +305,7 @@ interface FieldPaletteProps {
 
 const FieldPalette = ({ onFieldSelect }: FieldPaletteProps) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const categories = {
     'frequently-used': 'Frequently used',
@@ -325,7 +328,25 @@ const FieldPalette = ({ onFieldSelect }: FieldPaletteProps) => {
     : fieldTypes;
 
   return (
-    <div className="w-72 border-r border-slate-200 bg-white flex flex-col h-full overflow-hidden">
+    <div className={cn(
+      "border-r border-slate-200 bg-white flex flex-col h-full overflow-hidden transition-all duration-300 relative",
+      isCollapsed ? "w-12" : "w-72"
+    )}>
+      {/* Collapse/Expand Button */}
+      <button
+        onClick={() => setIsCollapsed(!isCollapsed)}
+        className="absolute -right-3 top-6 z-20 w-6 h-6 rounded-full flex items-center justify-center bg-white border-2 border-slate-200 text-slate-400 hover:border-orange-500 hover:text-orange-500 hover:bg-orange-50 transition-all duration-200 shadow-sm"
+        title={isCollapsed ? 'Expand field palette' : 'Collapse field palette'}
+      >
+        {isCollapsed ? (
+          <ChevronRight className="h-3.5 w-3.5" />
+        ) : (
+          <ChevronLeft className="h-3.5 w-3.5" />
+        )}
+      </button>
+
+      {!isCollapsed && (
+        <>
       {/* Header */}
       <div className="p-4 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white">
         <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide mb-3">Field Types</h3>
@@ -430,6 +451,116 @@ const FieldPalette = ({ onFieldSelect }: FieldPaletteProps) => {
           })
         )}
       </div>
+        </>
+      )}
+
+      {/* Collapsed State - Show Icons Only */}
+      {isCollapsed && (
+        <div className="flex flex-col h-full">
+          {/* Collapsed Header */}
+          <div className="p-2 border-b border-slate-200 bg-gradient-to-b from-slate-50 to-white flex items-center justify-center">
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-red-600 shadow-md">
+              <Type className="h-4 w-4 text-white" />
+            </div>
+          </div>
+          
+          {/* Icon Grid - More Fields */}
+          <div className="flex-1 overflow-y-auto p-1.5 space-y-1 bg-gradient-to-b from-slate-50 to-white">
+            {/* Frequently Used */}
+            <div className="space-y-1">
+              {fieldTypes
+                .filter(f => f.category === 'frequently-used')
+                .map((field) => {
+                  const Icon = field.icon;
+                  return (
+                    <button
+                      key={field.type}
+                      onClick={() => onFieldSelect(field.type)}
+                      className="w-full p-2 rounded-lg bg-white border border-slate-200 hover:bg-orange-50 hover:border-orange-300 transition-all shadow-sm group"
+                      title={field.label}
+                    >
+                      <Icon className="h-4 w-4 text-slate-600 group-hover:text-orange-600 mx-auto" />
+                    </button>
+                  );
+                })}
+            </div>
+
+            {/* Divider */}
+            <div className="py-1">
+              <div className="h-px bg-slate-200"></div>
+            </div>
+
+            {/* Choice Fields */}
+            <div className="space-y-1">
+              {fieldTypes
+                .filter(f => f.category === 'choice')
+                .map((field) => {
+                  const Icon = field.icon;
+                  return (
+                    <button
+                      key={field.type}
+                      onClick={() => onFieldSelect(field.type)}
+                      className="w-full p-2 rounded-lg bg-white border border-slate-200 hover:bg-orange-50 hover:border-orange-300 transition-all shadow-sm group"
+                      title={field.label}
+                    >
+                      <Icon className="h-4 w-4 text-slate-600 group-hover:text-orange-600 mx-auto" />
+                    </button>
+                  );
+                })}
+            </div>
+
+            {/* Divider */}
+            <div className="py-1">
+              <div className="h-px bg-slate-200"></div>
+            </div>
+
+            {/* Time Fields */}
+            <div className="space-y-1">
+              {fieldTypes
+                .filter(f => f.category === 'time')
+                .slice(0, 2)
+                .map((field) => {
+                  const Icon = field.icon;
+                  return (
+                    <button
+                      key={field.type}
+                      onClick={() => onFieldSelect(field.type)}
+                      className="w-full p-2 rounded-lg bg-white border border-slate-200 hover:bg-orange-50 hover:border-orange-300 transition-all shadow-sm group"
+                      title={field.label}
+                    >
+                      <Icon className="h-4 w-4 text-slate-600 group-hover:text-orange-600 mx-auto" />
+                    </button>
+                  );
+                })}
+            </div>
+
+            {/* Divider */}
+            <div className="py-1">
+              <div className="h-px bg-slate-200"></div>
+            </div>
+
+            {/* Rating & Special */}
+            <div className="space-y-1">
+              {fieldTypes
+                .filter(f => f.category === 'rating' || f.category === 'special')
+                .slice(0, 4)
+                .map((field) => {
+                  const Icon = field.icon;
+                  return (
+                    <button
+                      key={field.type}
+                      onClick={() => onFieldSelect(field.type)}
+                      className="w-full p-2 rounded-lg bg-white border border-slate-200 hover:bg-orange-50 hover:border-orange-300 transition-all shadow-sm group"
+                      title={field.label}
+                    >
+                      <Icon className="h-4 w-4 text-slate-600 group-hover:text-orange-600 mx-auto" />
+                    </button>
+                  );
+                })}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

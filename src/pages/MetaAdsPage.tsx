@@ -324,7 +324,7 @@ const MetaAdsPage = () => {
         <ErrorState description={dataError} onRetry={fetchMetaAdsData} />
       ) : insights ? (
         <>
-          {/* Top Metrics Row - Like DM Cockpit */}
+          {/* Top Metrics Row - Like IM Console */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <Card className="bg-white border border-slate-200">
               <CardContent className="pt-4 pb-4">
@@ -641,7 +641,7 @@ const MetaAdsPage = () => {
             </Card>
           </div>
 
-          {/* Campaigns Table - Like DM Cockpit Summary */}
+          {/* Campaigns Table - Like IM Console Summary */}
           <Card className="bg-white border border-slate-200">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">

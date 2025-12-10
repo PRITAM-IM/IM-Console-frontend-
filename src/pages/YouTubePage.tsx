@@ -268,7 +268,7 @@ const YouTubePage = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
     >
-      {/* Header - DM Cockpit Style */}
+      {/* Header - IM Console Style */}
       <div className="flex flex-wrap items-center justify-between gap-4 bg-gradient-to-r from-red-600 via-red-500 to-red-600 rounded-xl p-4 text-white">
         <div className="flex items-center gap-4">
           <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
@@ -404,7 +404,7 @@ const YouTubePage = () => {
             </div>
           </div>
 
-          {/* Top Metrics Cards - DM Cockpit Style (Red Theme) */}
+          {/* Top Metrics Cards - IM Console Style (Red Theme) */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Views */}
             <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
@@ -480,7 +480,7 @@ const YouTubePage = () => {
             </Card>
           </div>
 
-          {/* Insights Chart - DM Cockpit Style */}
+          {/* Insights Chart - IM Console Style */}
           <Card className="bg-white border border-slate-200">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg text-slate-900">Insights</CardTitle>
