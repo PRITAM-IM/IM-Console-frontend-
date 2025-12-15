@@ -18,22 +18,22 @@ const Header = () => {
       animate={{ opacity: 1, y: 0 }}
       className="h-16 border-b border-slate-200 bg-white/80 backdrop-blur-md sticky top-0 z-50"
     >
-      <div className="h-full px-6 flex items-center justify-between">
+      <div className="h-full px-3 sm:px-4 md:px-6 flex items-center justify-between">
         {/* Logo */}
-        <Link to="/dashboard" className="flex items-center gap-3 group">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-lg shadow-red-500/20 transition-transform group-hover:scale-105">
-            <Sparkles className="h-5 w-5 text-white" />
+        <Link to="/dashboard" className="flex items-center gap-2 md:gap-3 group">
+          <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-lg shadow-red-500/20 transition-transform group-hover:scale-105">
+            <Sparkles className="h-4 w-4 md:h-5 md:w-5 text-white" />
           </div>
-          <div>
+          <div className="hidden sm:block">
             <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">
               IM Console
             </p>
-            <p className="text-base font-bold text-slate-900 -mt-0.5">Hotel Analytics</p>
+            <p className="text-sm md:text-base font-bold text-slate-900 -mt-0.5">Hotel Analytics</p>
           </div>
         </Link>
 
-        {/* Navigation */}
-        <nav className="flex items-center gap-1">
+        {/* Navigation - Hidden on mobile */}
+        <nav className="hidden lg:flex items-center gap-1">
           {navItems.map((item) => (
             <NavLink
               key={item.to}
@@ -53,8 +53,8 @@ const Header = () => {
         </nav>
 
         {/* User Info */}
-        <div className="flex items-center gap-4">
-          <div className="text-right">
+        <div className="flex items-center gap-2 md:gap-4">
+          <div className="hidden md:block text-right">
             <p className="text-sm font-semibold text-slate-900">{user?.name}</p>
             <p className="text-xs text-slate-500 uppercase tracking-wide">
               {user?.role?.replace("_", " ")}
@@ -64,10 +64,10 @@ const Header = () => {
             variant="outline"
             size="sm"
             onClick={logout}
-            className="gap-2 border-slate-200 text-slate-600 hover:text-red-600 hover:border-red-200 hover:bg-red-50 transition-all duration-200"
+            className="gap-1 md:gap-2 border-slate-200 text-slate-600 hover:text-red-600 hover:border-red-200 hover:bg-red-50 transition-all duration-200 h-8 md:h-9 px-2 md:px-3"
           >
-            <LogOut className="h-4 w-4" />
-            Logout
+            <LogOut className="h-3 w-3 md:h-4 md:w-4" />
+            <span className="hidden sm:inline">Logout</span>
           </Button>
         </div>
       </div>

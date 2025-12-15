@@ -80,7 +80,7 @@ const OverviewCards = ({ data, loading }: OverviewCardsProps) => {
   };
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 lg:grid-cols-5">
+    <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
       {overviewConfig.map((item, index) => {
         const value = data?.[item.key];
         // Only show cards for metrics that exist in data or are always shown
@@ -96,9 +96,9 @@ const OverviewCards = ({ data, loading }: OverviewCardsProps) => {
             transition={{ delay: index * 0.05 }}
           >
             <Card className="bg-white">
-              <CardHeader>
-                <CardDescription className="text-slate-500">{item.label}</CardDescription>
-                <CardTitle className="text-3xl text-slate-900">
+              <CardHeader className="pb-3">
+                <CardDescription className="text-slate-500 text-xs sm:text-sm">{item.label}</CardDescription>
+                <CardTitle className="text-2xl sm:text-3xl text-slate-900">
                   {loading || !data || value === undefined
                     ? "—"
                     : `${formatValue(item, value)}${item.suffix ?? ""}`}

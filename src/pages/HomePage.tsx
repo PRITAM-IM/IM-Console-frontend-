@@ -53,7 +53,7 @@ const HomePage = () => {
         <div className="flex flex-col w-full overflow-hidden">
 
             {/* Hero Section */}
-            <section className="relative pt-24 pb-32 lg:pt-40 lg:pb-48 overflow-hidden bg-gradient-to-b from-slate-50 via-white to-slate-50">
+            <section className="relative pt-16 pb-20 sm:pt-20 sm:pb-24 md:pt-24 md:pb-32 lg:pt-40 lg:pb-48 overflow-hidden bg-gradient-to-b from-slate-50 via-white to-slate-50">
                 {/* Enhanced Background Design */}
                 <div className="absolute inset-0 z-0">
                     <div className="absolute top-0 right-[-10%] w-[700px] h-[700px] rounded-full bg-gradient-to-br from-red-500/10 to-orange-500/5 blur-[140px]" />
@@ -72,24 +72,24 @@ const HomePage = () => {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5 }}
-                        className="flex items-center justify-center gap-6 mb-10 flex-wrap"
+                        className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 mb-8 sm:mb-10"
                     >
-                        <div className="flex items-center gap-2 text-sm text-slate-600">
+                        <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-600">
                             <div className="flex -space-x-2">
-                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 border-2 border-white"></div>
-                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 border-2 border-white"></div>
-                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-500 to-red-500 border-2 border-white"></div>
-                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 border-2 border-white flex items-center justify-center text-white text-xs font-bold">+</div>
+                                <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 border-2 border-white"></div>
+                                <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 border-2 border-white"></div>
+                                <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-orange-500 to-red-500 border-2 border-white"></div>
+                                <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 border-2 border-white flex items-center justify-center text-white text-xs font-bold">+</div>
                             </div>
                             <span className="font-semibold">Multiple Hotels</span>
                         </div>
-                        <div className="w-px h-6 bg-slate-300 hidden sm:block"></div>
-                        <div className="flex items-center gap-2 text-sm text-slate-600">
+                        <div className="hidden sm:block w-px h-6 bg-slate-300"></div>
+                        <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-600">
                             <CheckCircle2 className="w-4 h-4 text-green-500" />
                             <span className="font-semibold">14-Day Free Trial</span>
                         </div>
-                        <div className="w-px h-6 bg-slate-300 hidden sm:block"></div>
-                        <div className="flex items-center gap-2 text-sm text-slate-600">
+                        <div className="hidden sm:block w-px h-6 bg-slate-300"></div>
+                        <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-600">
                             <ShieldCheck className="w-4 h-4 text-blue-500" />
                             <span className="font-semibold">No Credit Card Required</span>
                         </div>
@@ -99,7 +99,7 @@ const HomePage = () => {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5, delay: 0.1 }}
-                        className="text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tight text-slate-900 mb-8 leading-[1.05]"
+                        className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-extrabold tracking-tight text-slate-900 mb-6 sm:mb-8 leading-[1.05]"
                     >
                         Smarter Analytics for <br className="hidden md:block" />
                         <span className="relative inline-block">
@@ -114,7 +114,7 @@ const HomePage = () => {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5, delay: 0.2 }}
-                        className="text-lg md:text-xl lg:text-2xl text-slate-600 mb-12 max-w-3xl mx-auto leading-relaxed font-medium"
+                        className="text-base sm:text-lg md:text-xl lg:text-2xl text-slate-600 mb-8 sm:mb-10 md:mb-12 max-w-3xl mx-auto leading-relaxed font-medium px-4"
                     >
                         Stop guessing with your marketing budget. IM Console unifies all your data into one powerful dashboard, giving you the <span className="text-slate-900 font-bold">clarity you need to grow bookings</span>.
                     </motion.p>
@@ -123,16 +123,16 @@ const HomePage = () => {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5, delay: 0.3 }}
-                        className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16"
+                        className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-12 sm:mb-16 px-4"
                     >
-                        <Link to="/register">
-                            <Button size="lg" className="group h-16 px-10 text-lg rounded-full bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white shadow-2xl shadow-red-200/50 hover:shadow-red-300/60 hover:scale-105 transition-all duration-300 font-bold">
+                        <Link to="/register" className="w-full sm:w-auto">
+                            <Button size="lg" className="w-full sm:w-auto group h-12 sm:h-14 md:h-16 px-6 sm:px-8 md:px-10 text-base sm:text-lg rounded-full bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white shadow-2xl shadow-red-200/50 hover:shadow-red-300/60 hover:scale-105 transition-all duration-300 font-bold">
                                 Start Your Free Trial 
-                                <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform" />
                             </Button>
                         </Link>
-                        <Link to="/login">
-                            <Button variant="outline" size="lg" className="h-16 px-10 text-lg rounded-full border-2 border-slate-300 bg-white/80 backdrop-blur-sm text-slate-700 hover:bg-slate-50 hover:border-red-600 hover:text-red-700 transition-all duration-300 font-semibold">
+                        <Link to="/login" className="w-full sm:w-auto">
+                            <Button variant="outline" size="lg" className="w-full sm:w-auto h-12 sm:h-14 md:h-16 px-6 sm:px-8 md:px-10 text-base sm:text-lg rounded-full border-2 border-slate-300 bg-white/80 backdrop-blur-sm text-slate-700 hover:bg-slate-50 hover:border-red-600 hover:text-red-700 transition-all duration-300 font-semibold">
                                 Watch Live Demo
                             </Button>
                         </Link>
@@ -161,54 +161,54 @@ const HomePage = () => {
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 0.8, delay: 0.4 }}
-                        className="relative mx-auto max-w-7xl"
+                        className="relative mx-auto max-w-7xl px-4"
                     >
-                        <div className="relative rounded-2xl bg-slate-900 p-2 shadow-2xl ring-1 ring-slate-900/10">
+                        <div className="relative rounded-xl md:rounded-2xl bg-slate-900 p-1 md:p-2 shadow-2xl ring-1 ring-slate-900/10">
                             <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-slate-800 to-black opacity-50 rounded-2xl -z-10"></div>
-                            <div className="rounded-xl overflow-hidden bg-slate-100 aspect-[16/9] md:aspect-[21/9] border border-slate-800/50 shadow-inner relative group">
+                            <div className="rounded-lg md:rounded-xl overflow-hidden bg-slate-100 aspect-[16/10] sm:aspect-[16/9] md:aspect-[21/9] border border-slate-800/50 shadow-inner relative group">
 
                                 {/* Simulated Dashboard UI */}
                                 <div className="absolute inset-0 bg-slate-50 flex flex-col">
                                     {/* Top Bar */}
-                                    <div className="h-12 border-b border-slate-200 bg-white flex items-center px-4 justify-between">
-                                        <div className="flex items-center gap-4">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center">
-                                                    <BarChart3 className="w-5 h-5 text-white" />
+                                    <div className="h-8 sm:h-10 md:h-12 border-b border-slate-200 bg-white flex items-center px-2 sm:px-3 md:px-4 justify-between">
+                                        <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
+                                            <div className="flex items-center gap-1 sm:gap-2">
+                                                <div className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 rounded-md md:rounded-lg bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center">
+                                                    <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-white" />
                                                 </div>
-                                                <span className="font-bold text-slate-900 text-sm">IM Console</span>
+                                                <span className="font-bold text-slate-900 text-xs sm:text-sm">IM Console</span>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-3">
-                                            <div className="text-xs text-slate-500">Grand Plaza Hotel</div>
-                                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500"></div>
+                                        <div className="flex items-center gap-2 sm:gap-3">
+                                            <div className="hidden sm:block text-xs text-slate-500">Grand Plaza Hotel</div>
+                                            <div className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500"></div>
                                         </div>
                                     </div>
                                     {/* Layout */}
                                     <div className="flex-1 flex overflow-hidden">
                                         {/* Sidebar */}
-                                        <div className="w-16 md:w-60 border-r border-slate-200 bg-white hidden md:block p-4 space-y-2">
-                                            <div className="text-xs font-bold text-slate-400 uppercase px-2 mb-2">Analytics</div>
-                                            <div className="flex items-center gap-2 px-2 py-2 rounded-lg bg-red-50 text-red-600">
-                                                <LayoutDashboard className="w-4 h-4" />
-                                                <span className="text-sm font-medium">Overview</span>
+                                        <div className="w-12 sm:w-16 md:w-60 border-r border-slate-200 bg-white hidden sm:block p-2 md:p-4 space-y-1 md:space-y-2">
+                                            <div className="hidden md:block text-xs font-bold text-slate-400 uppercase px-2 mb-2">Analytics</div>
+                                            <div className="flex items-center gap-2 px-1 md:px-2 py-1 md:py-2 rounded-lg bg-red-50 text-red-600">
+                                                <LayoutDashboard className="w-3 h-3 md:w-4 md:h-4" />
+                                                <span className="hidden md:block text-sm font-medium">Overview</span>
                                             </div>
-                                            <div className="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-slate-50 text-slate-600">
-                                                <Globe className="w-4 h-4" />
-                                                <span className="text-sm">Google Analytics</span>
+                                            <div className="flex items-center gap-2 px-1 md:px-2 py-1 md:py-2 rounded-lg hover:bg-slate-50 text-slate-600">
+                                                <Globe className="w-3 h-3 md:w-4 md:h-4" />
+                                                <span className="hidden md:block text-sm">Google Analytics</span>
                                             </div>
-                                            <div className="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-slate-50 text-slate-600">
-                                                <TrendingUp className="w-4 h-4" />
-                                                <span className="text-sm">Meta Ads</span>
+                                            <div className="flex items-center gap-2 px-1 md:px-2 py-1 md:py-2 rounded-lg hover:bg-slate-50 text-slate-600">
+                                                <TrendingUp className="w-3 h-3 md:w-4 md:h-4" />
+                                                <span className="hidden md:block text-sm">Meta Ads</span>
                                             </div>
                                         </div>
                                         {/* Main Content */}
-                                        <div className="flex-1 p-4 md:p-6 bg-slate-50/50 overflow-auto">
-                                            <div className="mb-4">
-                                                <h2 className="text-xl font-bold text-slate-900">Performance Overview</h2>
-                                                <p className="text-sm text-slate-500">Last 30 days</p>
+                                        <div className="flex-1 p-2 sm:p-3 md:p-4 lg:p-6 bg-slate-50/50 overflow-auto">
+                                            <div className="mb-2 md:mb-4">
+                                                <h2 className="text-sm sm:text-base md:text-xl font-bold text-slate-900">Performance Overview</h2>
+                                                <p className="text-xs sm:text-sm text-slate-500">Last 30 days</p>
                                             </div>
-                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-4">
+                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 lg:gap-4 mb-3 md:mb-4">
                                                 <div className="bg-white rounded-lg shadow-sm border border-slate-100 p-3 md:p-4 relative overflow-hidden">
                                                     <div className="absolute top-0 right-0 w-20 h-20 bg-red-50 rounded-full -mr-10 -mt-10 opacity-50"></div>
                                                     <div className="relative">

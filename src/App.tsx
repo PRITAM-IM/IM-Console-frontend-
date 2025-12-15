@@ -35,8 +35,10 @@ import InstagramPage from "@/pages/InstagramPage";
 import GoogleSheetsPage from "@/pages/GoogleSheetsPage";
 import GoogleDrivePage from "@/pages/GoogleDrivePage";
 import LinkedInPage from "@/pages/LinkedInPage";
+import GooglePlacesPage from "@/pages/GooglePlacesPage";
 import TemplatesPage from "@/pages/TemplatesPage";
 import TemplateBuilderPage from "@/pages/TemplateBuilderPage";
+import AIMasterPage from "@/pages/AIMasterPage";
 import DashboardIndex from "@/pages/DashboardIndex";
 import NotFoundPage from "@/pages/NotFoundPage";
 import LoadingState from "@/components/common/LoadingState";
@@ -82,6 +84,7 @@ const App = () => (
             <Route path="/dashboard/:projectId/templates" element={<TemplatesPage />} />
             <Route path="/dashboard/:projectId/templates/new" element={<TemplateBuilderPage />} />
             <Route path="/dashboard/:projectId/templates/:templateId" element={<TemplateBuilderPage />} />
+            <Route path="/dashboard/:projectId/ai-master" element={<AIMasterPage />} />
           </Route>
 
           {/* Dashboard Layout for Regular Pages */}
@@ -98,6 +101,7 @@ const App = () => (
             <Route path="/dashboard/:projectId/sheets" element={<GoogleSheetsPage />} />
             <Route path="/dashboard/:projectId/drive" element={<GoogleDrivePage />} />
             <Route path="/dashboard/:projectId/linkedin" element={<LinkedInPage />} />
+            <Route path="/dashboard/:projectId/places" element={<GooglePlacesPage />} />
           </Route>
         </Route>
 

@@ -64,24 +64,24 @@ const TemplatesPage = () => {
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-gradient-to-b from-slate-50 via-white to-slate-50">
       {/* Header */}
-      <div className="bg-white border-b-2 border-slate-200 px-6 py-4 flex items-center justify-between shadow-sm flex-shrink-0">
-        <div className="flex items-center gap-4">
+      <div className="bg-white border-b-2 border-slate-200 px-3 sm:px-4 md:px-6 py-3 md:py-4 flex items-center justify-between shadow-sm flex-shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 md:gap-4 flex-1 min-w-0">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => navigate(`/dashboard/${projectId}`)}
-            className="gap-2"
+            className="gap-1 sm:gap-2 flex-shrink-0"
           >
             <ChevronLeft className="h-4 w-4" />
-            Back to Dashboard
+            <span className="hidden sm:inline">Back to Dashboard</span>
           </Button>
-          <div className="h-8 w-px bg-slate-300" />
-          <div className="flex items-center gap-3">
+          <div className="hidden sm:block h-8 w-px bg-slate-300" />
+          <div className="flex items-center gap-2 sm:gap-3">
             <div className="p-2 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl shadow-lg">
-              <FileText className="h-5 w-5 text-white" />
+              <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
             </div>
-            <div>
-              <h1 className="text-lg font-bold text-slate-900">Form Templates</h1>
+            <div className="hidden sm:block">
+              <h1 className="text-base sm:text-lg font-bold text-slate-900">Form Templates</h1>
               <p className="text-xs text-slate-500">Client Profiling & Data Collection</p>
             </div>
           </div>
@@ -89,50 +89,50 @@ const TemplatesPage = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-auto p-6">
+      <div className="flex-1 overflow-auto p-3 sm:p-4 md:p-6">
         <motion.section
           className="space-y-6"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
         >
           {/* Header */}
-          <div className="bg-gradient-to-br from-slate-50 via-white to-orange-50/30 rounded-2xl border border-slate-200/60 p-6 shadow-sm">
-            <div className="flex items-start justify-between">
-              <div className="flex items-start gap-4">
+          <div className="bg-gradient-to-br from-slate-50 via-white to-orange-50/30 rounded-xl md:rounded-2xl border border-slate-200/60 p-4 sm:p-5 md:p-6 shadow-sm">
+            <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+              <div className="flex items-start gap-3 sm:gap-4">
                 <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-br from-orange-400 to-red-500 rounded-2xl blur-lg opacity-25"></div>
-                  <div className="relative p-4 bg-gradient-to-br from-orange-500 via-orange-600 to-red-600 rounded-2xl shadow-lg">
-                    <FileText className="h-7 w-7 text-white" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-orange-400 to-red-500 rounded-xl md:rounded-2xl blur-lg opacity-25"></div>
+                  <div className="relative p-3 sm:p-4 bg-gradient-to-br from-orange-500 via-orange-600 to-red-600 rounded-xl md:rounded-2xl shadow-lg">
+                    <FileText className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-white" />
                   </div>
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold text-slate-900 mb-1">Form Templates</h1>
-                  <p className="text-sm text-slate-600">
+                  <h1 className="text-xl sm:text-2xl font-bold text-slate-900 mb-1">Form Templates</h1>
+                  <p className="text-xs sm:text-sm text-slate-600">
                     Create and manage client profiling forms with multi-page support
                   </p>
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                 <Button
                   onClick={handleCreateCPS}
-                  className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg gap-2"
+                  className="w-full sm:w-auto bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg gap-2"
                 >
                   <Sparkles className="h-4 w-4" />
-                  Use CPS Template
+                  <span className="text-xs sm:text-sm">Use CPS Template</span>
                 </Button>
                 <Button
                   onClick={handleCreateNew}
-                  className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 shadow-lg gap-2"
+                  className="w-full sm:w-auto bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 shadow-lg gap-2"
                 >
                   <Plus className="h-4 w-4" />
-                  Create Template
+                  <span className="text-xs sm:text-sm">Create Template</span>
                 </Button>
               </div>
             </div>
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
             <Card className="border-slate-200/60">
               <CardContent className="pt-6">
                 <div className="flex items-center gap-3">

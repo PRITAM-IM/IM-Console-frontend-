@@ -22,7 +22,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Globe,
-  Star,
   FileText,
   MapPin
 } from "lucide-react";
@@ -48,9 +47,9 @@ import ConnectInstagram from "@/components/projects/ConnectInstagram";
 import ConnectGoogleSheets from "@/components/projects/ConnectGoogleSheets";
 import ConnectGoogleDrive from "@/components/projects/ConnectGoogleDrive";
 import ConnectLinkedIn from "@/components/projects/ConnectLinkedIn";
-import ConnectGoogleBusinessProfile from "@/components/projects/ConnectGoogleBusinessProfile";
+import ConnectGooglePlaces from "@/components/projects/ConnectGooglePlaces";
 
-const ProjectSelector = () => {
+const ProjectSelector = ({ onMobileClose }: { onMobileClose?: () => void }) => {
   const { projectId } = useParams<{ projectId?: string }>();
   const navigate = useNavigate();
   const [projects, setProjects] = useState<Project[]>([]);
@@ -68,8 +67,8 @@ const ProjectSelector = () => {
   const [showConnectGoogleSheetsModal, setShowConnectGoogleSheetsModal] = useState(false);
   const [showConnectGoogleDriveModal, setShowConnectGoogleDriveModal] = useState(false);
   const [showConnectLinkedInModal, setShowConnectLinkedInModal] = useState(false);
-  const [showConnectGBPModal, setShowConnectGBPModal] = useState(false);
-  
+  const [showConnectGooglePlacesModal, setShowConnectGooglePlacesModal] = useState(false);
+
   // Category collapse states
   const [seoExpanded, setSeoExpanded] = useState(true);
   const [socialsExpanded, setSocialsExpanded] = useState(true);
@@ -132,13 +131,13 @@ const ProjectSelector = () => {
       <div
         className={cn(
           "flex-shrink-0 border-r border-slate-200 flex flex-col h-full overflow-hidden relative transition-all duration-300 bg-white",
-          isCollapsed ? "w-16" : "w-56"
+          isCollapsed ? "w-16" : "w-full md:w-56"
         )}
       >
         {/* Collapse Toggle Button */}
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="absolute -right-3 top-7 z-20 w-6 h-6 rounded-full flex items-center justify-center bg-white border-2 border-slate-200 text-slate-400 hover:border-red-500 hover:text-red-500 hover:bg-red-50 transition-all duration-200 shadow-sm"
+          className="hidden md:block absolute -right-3 top-7 z-20 w-6 h-6 rounded-full flex items-center justify-center bg-white border-2 border-slate-200 text-slate-400 hover:border-red-500 hover:text-red-500 hover:bg-red-50 transition-all duration-200 shadow-sm"
           title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           {isCollapsed ? (
@@ -151,80 +150,88 @@ const ProjectSelector = () => {
         {/* Project Selector Header */}
         {!isCollapsed ? (
           <div className="h-16 flex items-center px-4 border-b border-slate-200 bg-slate-50/50">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-between px-3 h-10 text-sm font-semibold hover:bg-slate-100 rounded-xl"
+            <div className="flex items-center justify-between w-full">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-between px-3 h-10 text-sm font-semibold hover:bg-slate-100 rounded-xl"
+                  >
+                    <span className="truncate flex-1 text-left text-slate-900">{truncatedName}</span>
+                    <ChevronDown className="h-4 w-4 ml-2 flex-shrink-0 text-slate-400" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="start"
+                  className="w-56 z-[100] bg-white border-slate-200 shadow-xl rounded-xl p-1"
                 >
-                  <span className="truncate flex-1 text-left text-slate-900">{truncatedName}</span>
-                  <ChevronDown className="h-4 w-4 ml-2 flex-shrink-0 text-slate-400" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="start"
-                className="w-56 z-[100] bg-white border-slate-200 shadow-xl rounded-xl p-1"
-              >
-                {/* Search Bar */}
-                <div className="px-2 py-2">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                    <input
-                      type="text"
-                      placeholder="Search projects..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 bg-slate-50 text-slate-900 placeholder:text-slate-400"
-                    />
+                  {/* Search Bar */}
+                  <div className="px-2 py-2">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                      <input
+                        type="text"
+                        placeholder="Search projects..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 bg-slate-50 text-slate-900 placeholder:text-slate-400"
+                      />
+                    </div>
                   </div>
-                </div>
 
-                <DropdownMenuSeparator className="bg-slate-100" />
+                  <DropdownMenuSeparator className="bg-slate-100" />
 
-                {/* Projects List */}
-                <div className="max-h-64 overflow-y-auto py-1">
-                  {loading ? (
-                    <div className="px-2 py-4">
-                      <LoadingState message="Loading..." className="py-2" />
-                    </div>
-                  ) : filteredProjects.length === 0 ? (
-                    <div className="px-2 py-4 text-sm text-center text-slate-500">
-                      {searchQuery ? "No projects found" : "No projects"}
-                    </div>
-                  ) : (
-                    filteredProjects.map((project) => {
-                      const id = project.id ?? project._id;
-                      const isSelected = id === projectId;
-                      return (
-                        <DropdownMenuItem
-                          key={id}
-                          onClick={() => handleProjectSelect(project)}
-                          className={cn(
-                            "mx-1 rounded-lg cursor-pointer transition-colors",
-                            isSelected
-                              ? "bg-red-50 text-red-600"
-                              : "text-slate-700 hover:bg-slate-100"
-                          )}
-                        >
-                          <span className="truncate">{project.name}</span>
-                        </DropdownMenuItem>
-                      );
-                    })
-                  )}
-                </div>
+                  {/* Projects List */}
+                  <div className="max-h-64 overflow-y-auto py-1">
+                    {loading ? (
+                      <div className="px-2 py-4">
+                        <LoadingState message="Loading..." className="py-2" />
+                      </div>
+                    ) : filteredProjects.length === 0 ? (
+                      <div className="px-2 py-4 text-sm text-center text-slate-500">
+                        {searchQuery ? "No projects found" : "No projects"}
+                      </div>
+                    ) : (
+                      filteredProjects.map((project) => {
+                        const id = project.id ?? project._id;
+                        const isSelected = id === projectId;
+                        return (
+                          <DropdownMenuItem
+                            key={id}
+                            onClick={() => {
+                              handleProjectSelect(project);
+                              onMobileClose?.();
+                            }}
+                            className={cn(
+                              "mx-1 rounded-lg cursor-pointer transition-colors",
+                              isSelected
+                                ? "bg-red-50 text-red-600"
+                                : "text-slate-700 hover:bg-slate-100"
+                            )}
+                          >
+                            <span className="truncate">{project.name}</span>
+                          </DropdownMenuItem>
+                        );
+                      })
+                    )}
+                  </div>
 
-                <DropdownMenuSeparator className="bg-slate-100" />
+                  <DropdownMenuSeparator className="bg-slate-100" />
 
-                {/* Add Project Button */}
-                <DropdownMenuItem
-                  onClick={() => navigate("/projects/new")}
-                  className="mx-1 rounded-lg text-red-600 hover:bg-red-50 font-medium cursor-pointer"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add New Project
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  {/* Add Project Button */}
+                  <DropdownMenuItem
+                    onClick={() => {
+                      navigate("/projects/new");
+                      onMobileClose?.();
+                    }}
+                    className="mx-1 rounded-lg text-red-600 hover:bg-red-50 font-medium cursor-pointer"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add New Project
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         ) : (
           <div className="h-16 flex items-center justify-center border-b border-slate-200 bg-slate-50/50">
@@ -262,7 +269,7 @@ const ProjectSelector = () => {
                 onConnectGoogleSheets={() => setShowConnectGoogleSheetsModal(true)}
                 onConnectGoogleDrive={() => setShowConnectGoogleDriveModal(true)}
                 onConnectLinkedIn={() => setShowConnectLinkedInModal(true)}
-                onConnectGBP={() => setShowConnectGBPModal(true)}
+                onConnectGooglePlaces={() => setShowConnectGooglePlacesModal(true)}
                 seoExpanded={seoExpanded}
                 setSeoExpanded={setSeoExpanded}
                 socialsExpanded={socialsExpanded}
@@ -394,14 +401,14 @@ const ProjectSelector = () => {
         />
       )}
 
-      {showConnectGBPModal && projectId && (
-        <ConnectGoogleBusinessProfile
+      {showConnectGooglePlacesModal && projectId && (
+        <ConnectGooglePlaces
           projectId={projectId}
           onSuccess={() => {
-            setShowConnectGBPModal(false);
+            setShowConnectGooglePlacesModal(false);
             void handleConnectSuccess();
           }}
-          onClose={() => setShowConnectGBPModal(false)}
+          onClose={() => setShowConnectGooglePlacesModal(false)}
         />
       )}
     </>
@@ -428,7 +435,7 @@ interface ProjectInsightsSectionProps {
   onConnectGoogleSheets: () => void;
   onConnectGoogleDrive: () => void;
   onConnectLinkedIn: () => void;
-  onConnectGBP: () => void;
+  onConnectGooglePlaces: () => void;
   seoExpanded: boolean;
   setSeoExpanded: (expanded: boolean) => void;
   socialsExpanded: boolean;
@@ -454,7 +461,7 @@ const ProjectInsightsSection = ({
   onConnectGoogleSheets,
   onConnectGoogleDrive,
   onConnectLinkedIn,
-  onConnectGBP,
+  onConnectGooglePlaces,
   seoExpanded,
   setSeoExpanded,
   socialsExpanded,
@@ -473,17 +480,17 @@ const ProjectInsightsSection = ({
       expanded: seoExpanded,
       setExpanded: setSeoExpanded,
       services: [
-        { 
-          label: "Google Analytics", 
-          connected: !!project?.gaPropertyId, 
-          route: `/dashboard/${projectId}/analytics`, 
+        {
+          label: "Google Analytics",
+          connected: !!project?.gaPropertyId,
+          route: `/dashboard/${projectId}/analytics`,
           icon: BarChart3,
           onConnect: onConnectGA
         },
-        { 
-          label: "Search Console", 
-          connected: !!project?.searchConsoleSiteUrl, 
-          route: `/dashboard/${projectId}/search-console`, 
+        {
+          label: "Search Console",
+          connected: !!project?.searchConsoleSiteUrl,
+          route: `/dashboard/${projectId}/search-console`,
           icon: Search,
           onConnect: onConnectSearchConsole
         },
@@ -494,31 +501,31 @@ const ProjectInsightsSection = ({
       expanded: socialsExpanded,
       setExpanded: setSocialsExpanded,
       services: [
-        { 
-          label: "Facebook Insights", 
-          connected: !!project?.facebookPageId, 
-          route: `/dashboard/${projectId}/facebook`, 
+        {
+          label: "Facebook Insights",
+          connected: !!project?.facebookPageId,
+          route: `/dashboard/${projectId}/facebook`,
           icon: Facebook,
           onConnect: onConnectFacebook
         },
-        { 
-          label: "Instagram", 
-          connected: !!project?.instagram?.igUserId, 
-          route: `/dashboard/${projectId}/instagram`, 
+        {
+          label: "Instagram",
+          connected: !!project?.instagram?.igUserId,
+          route: `/dashboard/${projectId}/instagram`,
           icon: Instagram,
           onConnect: onConnectInstagram
         },
-        { 
-          label: "LinkedIn", 
-          connected: !!project?.linkedinPageId, 
-          route: `/dashboard/${projectId}/linkedin`, 
+        {
+          label: "LinkedIn",
+          connected: !!project?.linkedinPageId,
+          route: `/dashboard/${projectId}/linkedin`,
           icon: Linkedin,
           onConnect: onConnectLinkedIn
         },
-        { 
-          label: "YouTube", 
-          connected: !!project?.youtubeChannelId, 
-          route: `/dashboard/${projectId}/youtube`, 
+        {
+          label: "YouTube",
+          connected: !!project?.youtubeChannelId,
+          route: `/dashboard/${projectId}/youtube`,
           icon: Youtube,
           onConnect: onConnectYouTube
         },
@@ -529,17 +536,17 @@ const ProjectInsightsSection = ({
       expanded: adsExpanded,
       setExpanded: setAdsExpanded,
       services: [
-        { 
-          label: "Meta Ads", 
-          connected: !!project?.metaAdsAccountId, 
-          route: `/dashboard/${projectId}/meta-ads`, 
+        {
+          label: "Meta Ads",
+          connected: !!project?.metaAdsAccountId,
+          route: `/dashboard/${projectId}/meta-ads`,
           icon: Megaphone,
           onConnect: onConnectMetaAds
         },
-        { 
-          label: "Google Ads", 
-          connected: !!project?.googleAdsCustomerId, 
-          route: `/dashboard/${projectId}/ads`, 
+        {
+          label: "Google Ads",
+          connected: !!project?.googleAdsCustomerId,
+          route: `/dashboard/${projectId}/ads`,
           icon: TrendingUp,
           onConnect: onConnectAds
         },
@@ -550,17 +557,17 @@ const ProjectInsightsSection = ({
       expanded: dataExpanded,
       setExpanded: setDataExpanded,
       services: [
-        { 
-          label: "Hotel CRM", 
-          connected: !!project?.googleSheetId, 
-          route: `/dashboard/${projectId}/sheets`, 
+        {
+          label: "Hotel CRM",
+          connected: !!project?.googleSheetId,
+          route: `/dashboard/${projectId}/sheets`,
           icon: FileSpreadsheet,
           onConnect: onConnectGoogleSheets
         },
-        { 
-          label: "Client Data", 
-          connected: !!project?.googleDriveFolderId, 
-          route: `/dashboard/${projectId}/drive`, 
+        {
+          label: "Client Data",
+          connected: !!project?.googleDriveFolderId,
+          route: `/dashboard/${projectId}/drive`,
           icon: HardDrive,
           onConnect: onConnectGoogleDrive
         },
@@ -571,19 +578,19 @@ const ProjectInsightsSection = ({
       expanded: reviewsExpanded,
       setExpanded: setReviewsExpanded,
       services: [
-        { 
-          label: "Google Reviews", 
-          connected: !!project?.googleBusinessProfileLocationId, 
-          route: `/dashboard/${projectId}/reviews`, 
-          icon: Star,
-          onConnect: onConnectGBP
-        },
-        { 
-          label: "TA Reviews", 
-          connected: false, // TODO: Add TripAdvisor connection support
-          route: `/dashboard/${projectId}/ta-reviews`, 
+        {
+          label: "Google Places",
+          connected: !!project?.googlePlacesId,
+          route: `/dashboard/${projectId}/places`,
           icon: MapPin,
-          onConnect: () => {} // TODO: Add TripAdvisor connect handler
+          onConnect: onConnectGooglePlaces
+        },
+        {
+          label: "TA Reviews",
+          connected: false, // TODO: Add TripAdvisor connection support
+          route: `/dashboard/${projectId}/ta-reviews`,
+          icon: Globe,
+          onConnect: () => { } // TODO: Add TripAdvisor connect handler
         },
       ]
     },
@@ -636,7 +643,7 @@ const ProjectInsightsSection = ({
       {categories.map((category) => {
         const connectedServices = category.services.filter(s => s.connected);
         const pendingServices = category.services.filter(s => !s.connected);
-        
+
         return (
           <div key={category.name} className="border-b border-slate-200">
             {/* Category Header */}
@@ -738,7 +745,7 @@ const CollapsedProjectNav = ({ projectId, project }: CollapsedProjectNavProps) =
     { label: "Google Ads", connected: !!project?.googleAdsCustomerId, route: `/dashboard/${projectId}/ads`, icon: TrendingUp },
     { label: "Hotel CRM", connected: !!project?.googleSheetId, route: `/dashboard/${projectId}/sheets`, icon: FileSpreadsheet },
     { label: "Client Data", connected: !!project?.googleDriveFolderId, route: `/dashboard/${projectId}/drive`, icon: HardDrive },
-    { label: "Google Reviews", connected: !!project?.googleBusinessProfileLocationId, route: `/dashboard/${projectId}/reviews`, icon: Star },
+    { label: "Google Places", connected: !!project?.googlePlacesId, route: `/dashboard/${projectId}/places`, icon: MapPin },
   ];
 
   const connectedServices = connections.filter((conn) => conn.connected);

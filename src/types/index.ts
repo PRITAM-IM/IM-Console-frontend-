@@ -39,6 +39,20 @@ export interface Project {
   googleDriveFolderId?: string;
   linkedinPageId?: string;
   googleBusinessProfileLocationId?: string;
+  googlePlacesId?: string;  // Google Places API integration
+  googlePlacesData?: {
+    displayName?: string;
+    formattedAddress?: string;
+    rating?: number;
+    userRatingCount?: number;
+    websiteUri?: string;
+    phoneNumber?: string;
+    location?: {
+      latitude: number;
+      longitude: number;
+    };
+    lastUpdated?: string;
+  };
   instagram?: {
     igUserId?: string;
     igUsername?: string;

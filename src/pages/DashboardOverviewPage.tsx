@@ -311,9 +311,9 @@ const DashboardOverviewPage = () => {
   const hasInstagram = !!project?.instagram?.igUserId;
   const hasYouTube = !!project?.youtubeChannelId;
   const hasLinkedIn = !!project?.linkedinPageId;
-  const hasGBP = !!project?.googleBusinessProfileLocationId;
+  const hasGooglePlaces = !!project?.googlePlacesId;
 
-  const connectedCount = [hasGA, hasAds, hasMetaAds, hasSearchConsole, hasFacebook, hasInstagram, hasYouTube, hasLinkedIn, hasGBP].filter(Boolean).length;
+  const connectedCount = [hasGA, hasAds, hasMetaAds, hasSearchConsole, hasFacebook, hasInstagram, hasYouTube, hasLinkedIn, hasGooglePlaces].filter(Boolean).length;
   const totalPlatforms = 9;
 
   const formatNumber = (num: number) => {
@@ -393,11 +393,11 @@ const DashboardOverviewPage = () => {
           <Button
             variant="default"
             size="sm"
-            onClick={() => setShowMagicSuggestions(true)}
-            className="gap-2 bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 hover:from-violet-700 hover:via-purple-700 hover:to-fuchsia-700 text-white shadow-lg shadow-violet-500/25 border-0"
+            onClick={() => navigate(`/dashboard/${projectId}/ai-master`)}
+            className="gap-2 bg-gradient-to-r from-red-600 via-orange-600 to-red-600 hover:from-red-700 hover:via-orange-700 hover:to-red-700 text-white shadow-lg shadow-red-500/25 border-0"
           >
             <Sparkles className="h-4 w-4" />
-            Magic Suggestions
+            AI Master
           </Button>
           <Button
             variant="outline"
@@ -939,7 +939,7 @@ const DashboardOverviewPage = () => {
                 { name: "Instagram", connected: hasInstagram, path: "instagram", color: "pink" },
                 { name: "YouTube", connected: hasYouTube, path: "youtube", color: "red" },
                 { name: "LinkedIn", connected: hasLinkedIn, path: "linkedin", color: "sky" },
-                { name: "Google Reviews", connected: hasGBP, path: "reviews", color: "amber" },
+                { name: "Google Places", connected: hasGooglePlaces, path: "places", color: "amber" },
               ].map((platform) => (
                 <button
                   key={platform.name}

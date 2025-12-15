@@ -89,7 +89,7 @@ const DashboardIndex = () => {
             project.instagram?.igUserId,
             project.youtubeChannelId,
             project.linkedinPageId,
-            project.googleBusinessProfileLocationId,
+            project.googlePlacesId,
           ].filter(Boolean).length;
 
           return (

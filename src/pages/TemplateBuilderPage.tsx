@@ -404,30 +404,30 @@ const TemplateBuilderPage = () => {
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-white">
       {/* Top Toolbar */}
-      <div className="bg-white border-b-2 border-slate-200 px-6 py-4 flex items-center justify-between shadow-sm flex-shrink-0">
-        <div className="flex items-center gap-4">
+      <div className="bg-white border-b-2 border-slate-200 px-3 sm:px-4 md:px-6 py-3 md:py-4 flex items-center justify-between shadow-sm flex-shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 md:gap-4 flex-1 min-w-0">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => navigate(`/dashboard/${projectId}/templates`)}
-            className="gap-2"
+            className="gap-1 sm:gap-2 flex-shrink-0"
           >
             <ChevronLeft className="h-4 w-4" />
-            Back to Templates
+            <span className="hidden sm:inline">Back to Templates</span>
           </Button>
-          <div className="h-8 w-px bg-slate-300" />
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl shadow-lg">
+          <div className="hidden sm:block h-8 w-px bg-slate-300" />
+          <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+            <div className="hidden sm:block p-2 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl shadow-lg flex-shrink-0">
               <FileText className="h-5 w-5 text-white" />
             </div>
-            <div>
+            <div className="flex-1 min-w-0">
               <Input
                 value={template.name}
                 onChange={(e) => setTemplate(prev => ({ ...prev, name: e.target.value }))}
-                className="text-lg font-bold border-0 focus-visible:ring-0 p-0 h-auto"
+                className="text-base sm:text-lg font-bold border-0 focus-visible:ring-0 p-0 h-auto truncate"
               />
               <div className="flex items-center gap-2">
-                <p className="text-xs text-slate-500">Form Template</p>
+                <p className="text-xs text-slate-500 hidden sm:block">Form Template</p>
                 {isSaving ? (
                   <span className="text-xs text-orange-600 flex items-center gap-1">
                     <span className="inline-block w-1 h-1 bg-orange-600 rounded-full animate-pulse" />
@@ -436,7 +436,8 @@ const TemplateBuilderPage = () => {
                 ) : lastSaved ? (
                   <span className="text-xs text-green-600 flex items-center gap-1">
                     <span className="inline-block w-1 h-1 bg-green-600 rounded-full" />
-                    Saved {new Date(lastSaved).toLocaleTimeString()}
+                    <span className="hidden sm:inline">Saved {new Date(lastSaved).toLocaleTimeString()}</span>
+                    <span className="sm:hidden">Saved</span>
                   </span>
                 ) : null}
               </div>
@@ -444,53 +445,55 @@ const TemplateBuilderPage = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
           <Button
             variant="outline"
             size="sm"
             onClick={() => {
-              setSelectedField(null); // Close properties panel
+              setSelectedField(null);
               setShowTemplatePanel(true);
             }}
-            className="gap-2"
+            className="gap-1 sm:gap-2 hidden md:flex"
           >
             <Palette className="h-4 w-4" />
-            Templates
+            <span className="hidden lg:inline">Templates</span>
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={() => setShowPublishDialog(true)}
-            className="gap-2"
+            className="gap-1 sm:gap-2"
           >
             <Share2 className="h-4 w-4" />
-            Share
+            <span className="hidden sm:inline">Share</span>
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={handlePreview}
-            className="gap-2"
+            className="gap-1 sm:gap-2"
           >
             <Eye className="h-4 w-4" />
-            Preview
+            <span className="hidden sm:inline">Preview</span>
           </Button>
           <Button
             size="sm"
             onClick={handleSave}
             disabled={isSaving}
-            className="gap-2 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700"
+            className="gap-1 sm:gap-2 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700"
           >
             <Save className="h-4 w-4" />
-            {isSaving ? 'Saving...' : 'Save'}
+            <span className="hidden sm:inline">{isSaving ? 'Saving...' : 'Save'}</span>
           </Button>
         </div>
       </div>
 
       {/* Builder Layout */}
       <div className="flex flex-1 overflow-hidden min-h-0">
-        {/* Left: Field Palette */}
-        <FieldPalette onFieldSelect={handleFieldSelect} />
+        {/* Left: Field Palette - Hidden on mobile */}
+        <div className="hidden lg:block">
+          <FieldPalette onFieldSelect={handleFieldSelect} />
+        </div>
 
         {/* Center: Form Canvas with Tabs */}
         <div className="flex-1 flex flex-col overflow-hidden min-h-0 min-w-0">
@@ -541,9 +544,9 @@ const TemplateBuilderPage = () => {
           </div>
         </div>
 
-        {/* Right Sidebar - Show Templates Panel, or Properties Panel when field is selected */}
+        {/* Right Sidebar - Show Templates Panel, or Properties Panel when field is selected - Hidden on mobile unless active */}
         {showTemplatePanel ? (
-          <div className="w-80 flex-shrink-0">
+          <div className="w-full sm:w-80 flex-shrink-0 absolute sm:relative inset-0 sm:inset-auto bg-white z-50 sm:z-auto">
             <TemplatePanel
               template={template}
               onTemplateApply={handleTemplateApply}
@@ -551,7 +554,7 @@ const TemplateBuilderPage = () => {
             />
           </div>
         ) : selectedField ? (
-          <div className="w-80 flex-shrink-0">
+          <div className="w-full sm:w-80 flex-shrink-0 absolute sm:relative inset-0 sm:inset-auto bg-white z-50 sm:z-auto">
             <PropertiesPanel
               selectedField={selectedField}
               onFieldUpdate={handleFieldUpdate}
