@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import LoadingState from "@/components/common/LoadingState";
 import ErrorState from "@/components/common/ErrorState";
-import api from "@/lib/api";
 
 const YouTubeCallbackPage = () => {
   const [error, setError] = useState<string | null>(null);
@@ -11,8 +10,7 @@ const YouTubeCallbackPage = () => {
   useEffect(() => {
     const handleCallback = async () => {
       const urlParams = new URLSearchParams(window.location.search);
-      const code = urlParams.get("code");
-      const projectId = urlParams.get("projectId");
+      const youtubeConnected = urlParams.get("youtube_connected");
       const errorParam = urlParams.get("error");
 
       if (errorParam) {
@@ -27,11 +25,11 @@ const YouTubeCallbackPage = () => {
         return;
       }
 
-      if (!code || !projectId) {
-        setError("Missing authorization code or project ID");
+      if (!youtubeConnected) {
+        setError("Missing connection confirmation");
         if (window.opener) {
           window.opener.postMessage(
-            { type: "YOUTUBE_OAUTH_ERROR", error: "Missing authorization code or project ID" },
+            { type: "YOUTUBE_OAUTH_ERROR", error: "Missing connection confirmation" },
             window.location.origin
           );
           setTimeout(() => window.close(), 2000);
@@ -39,35 +37,19 @@ const YouTubeCallbackPage = () => {
         return;
       }
 
-      try {
-        // Send code and projectId to backend
-        await api.post("/youtube/callback", {
-          code,
-          projectId,
-        });
-
-        // Send success message to parent window
-        if (window.opener) {
-          window.opener.postMessage(
-            { type: "YOUTUBE_OAUTH_SUCCESS", projectId },
-            window.location.origin
-          );
-          window.close();
-        } else {
-          // If no opener (direct navigation), redirect to dashboard
-          navigate(`/dashboard/${projectId}/youtube?youtube_connected=true`);
-        }
-      } catch (err: any) {
-        const errorMessage = err.response?.data?.error || err.message || "Failed to connect YouTube";
-        setError(errorMessage);
-        
-        if (window.opener) {
-          window.opener.postMessage(
-            { type: "YOUTUBE_OAUTH_ERROR", error: errorMessage },
-            window.location.origin
-          );
-          setTimeout(() => window.close(), 2000);
-        }
+      // Connection was successful (backend already saved it)
+      const projectId = youtubeConnected;
+      
+      // Send success message to parent window
+      if (window.opener) {
+        window.opener.postMessage(
+          { type: "YOUTUBE_OAUTH_SUCCESS", projectId },
+          window.location.origin
+        );
+        window.close();
+      } else {
+        // If no opener (direct navigation), redirect to dashboard
+        navigate(`/dashboard/${projectId}/youtube?youtube_connected=true`);
       }
     };
 

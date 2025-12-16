@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import LoadingState from "@/components/common/LoadingState";
 import ErrorState from "@/components/common/ErrorState";
-import api from "@/lib/api";
 
 const LinkedInCallbackPage = () => {
   const [error, setError] = useState<string | null>(null);
@@ -11,8 +10,7 @@ const LinkedInCallbackPage = () => {
   useEffect(() => {
     const handleCallback = async () => {
       const urlParams = new URLSearchParams(window.location.search);
-      const code = urlParams.get("code");
-      const projectId = urlParams.get("projectId");
+      const linkedinConnected = urlParams.get("linkedin_connected");
       const errorParam = urlParams.get("error");
 
       if (errorParam) {
@@ -27,11 +25,11 @@ const LinkedInCallbackPage = () => {
         return;
       }
 
-      if (!code || !projectId) {
-        setError("Missing authorization code or project ID");
+      if (!linkedinConnected) {
+        setError("Missing connection confirmation");
         if (window.opener) {
           window.opener.postMessage(
-            { type: "LINKEDIN_OAUTH_ERROR", error: "Missing authorization code or project ID" },
+            { type: "LINKEDIN_OAUTH_ERROR", error: "Missing connection confirmation" },
             window.location.origin
           );
           setTimeout(() => window.close(), 2000);
@@ -39,35 +37,19 @@ const LinkedInCallbackPage = () => {
         return;
       }
 
-      try {
-        // Send code and projectId to backend
-        await api.post("/linkedin/callback", {
-          code,
-          projectId,
-        });
-
-        // Send success message to parent window
-        if (window.opener) {
-          window.opener.postMessage(
-            { type: "LINKEDIN_OAUTH_SUCCESS", projectId },
-            window.location.origin
-          );
-          window.close();
-        } else {
-          // If no opener (direct navigation), redirect to dashboard
-          navigate(`/dashboard/${projectId}/linkedin?linkedin_connected=true`);
-        }
-      } catch (err: any) {
-        const errorMessage = err.response?.data?.error || err.message || "Failed to connect LinkedIn";
-        setError(errorMessage);
-        
-        if (window.opener) {
-          window.opener.postMessage(
-            { type: "LINKEDIN_OAUTH_ERROR", error: errorMessage },
-            window.location.origin
-          );
-          setTimeout(() => window.close(), 2000);
-        }
+      // Connection was successful (backend already saved it)
+      const projectId = linkedinConnected;
+      
+      // Send success message to parent window
+      if (window.opener) {
+        window.opener.postMessage(
+          { type: "LINKEDIN_OAUTH_SUCCESS", projectId },
+          window.location.origin
+        );
+        window.close();
+      } else {
+        // If no opener (direct navigation), redirect to dashboard
+        navigate(`/dashboard/${projectId}/linkedin?linkedin_connected=true`);
       }
     };
 
