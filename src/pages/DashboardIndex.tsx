@@ -34,6 +34,16 @@ const DashboardIndex = () => {
     void fetchProjects();
   }, []);
 
+  // Auto-redirect to first project if projects exist
+  useEffect(() => {
+    if (!loading && projects.length > 0) {
+      const firstProjectId = projects[0].id ?? projects[0]._id;
+      if (firstProjectId) {
+        navigate(`/dashboard/${firstProjectId}`, { replace: true });
+      }
+    }
+  }, [loading, projects, navigate]);
+
   if (loading) {
     return <LoadingState message="Fetching your projects..." className="py-16" />;
   }

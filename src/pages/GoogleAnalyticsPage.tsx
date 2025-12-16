@@ -22,6 +22,7 @@ import LoadingState from "@/components/common/LoadingState";
 import ErrorState from "@/components/common/ErrorState";
 import EmptyState from "@/components/common/EmptyState";
 import ReconnectButton from "@/components/common/ReconnectButton";
+import AIMasterButton from "@/components/common/AIMasterButton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import ConnectGoogleAnalytics from "@/components/projects/ConnectGoogleAnalytics";
@@ -152,9 +153,11 @@ const GoogleAnalyticsPage = () => {
           `/analytics/overview/${projectId}`,
           params
         );
+        console.log('[GA] Overview response:', overviewRes.data);
         setOverview(overviewRes.data.data);
       } catch (error: any) {
         const errorMsg = error.response?.data?.error || error.message;
+        console.error('[GA] Overview error:', errorMsg);
         if (isTokenError(errorMsg)) setTokenExpired(true);
         setChartErrors((prev) => ({ ...prev, overview: errorMsg }));
       }
@@ -396,6 +399,7 @@ const GoogleAnalyticsPage = () => {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <AIMasterButton />
           <ReconnectButton
             service="google-analytics"
             projectId={projectId || ''}

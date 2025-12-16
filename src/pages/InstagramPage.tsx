@@ -23,6 +23,7 @@ import ReactCountryFlag from "react-country-flag";
 import LoadingState from "@/components/common/LoadingState";
 import ErrorState from "@/components/common/ErrorState";
 import ReconnectButton from "@/components/common/ReconnectButton";
+import AIMasterButton from "@/components/common/AIMasterButton";
 import EmptyState from "@/components/common/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -185,6 +186,7 @@ const InstagramPage = () => {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <AIMasterButton />
           <ReconnectButton
             service="instagram"
             projectId={projectId || ''}

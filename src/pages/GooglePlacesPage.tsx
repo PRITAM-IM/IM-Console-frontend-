@@ -15,6 +15,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import LoadingState from "@/components/common/LoadingState";
 import ErrorState from "@/components/common/ErrorState";
+import AIMasterButton from "@/components/common/AIMasterButton";
 import ConnectGooglePlaces from "@/components/projects/ConnectGooglePlaces";
 import api from "@/lib/api";
 import type { Project } from "@/types";
@@ -225,10 +226,13 @@ const GooglePlacesPage = () => {
           <h1 className="text-3xl font-bold text-slate-900">Google Places</h1>
           <p className="text-slate-600 mt-1">Hotel information from Google Places API</p>
         </div>
-        <Button onClick={() => fetchPlaceData()} disabled={loadingData} variant="outline">
-          <RefreshCw className={`mr-2 h-4 w-4 ${loadingData ? "animate-spin" : ""}`} />
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          <AIMasterButton />
+          <Button onClick={() => fetchPlaceData()} disabled={loadingData} variant="outline">
+            <RefreshCw className={`mr-2 h-4 w-4 ${loadingData ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {dataError && <ErrorState description={dataError} onRetry={fetchPlaceData} />}

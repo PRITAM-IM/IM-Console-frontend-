@@ -21,6 +21,7 @@ import DateRangeSelector from "@/components/dashboard/DateRangeSelector";
 import LoadingState from "@/components/common/LoadingState";
 import ErrorState from "@/components/common/ErrorState";
 import ReconnectButton from "@/components/common/ReconnectButton";
+import AIMasterButton from "@/components/common/AIMasterButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -276,6 +277,7 @@ const GoogleSearchConsolePage = () => {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <AIMasterButton />
           <ReconnectButton
             service="google-search-console"
             projectId={projectId || ''}

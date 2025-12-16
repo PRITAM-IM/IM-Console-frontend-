@@ -30,6 +30,7 @@ import LoadingState from "@/components/common/LoadingState";
 import ErrorState from "@/components/common/ErrorState";
 import EmptyState from "@/components/common/EmptyState";
 import ReconnectButton from "@/components/common/ReconnectButton";
+import AIMasterButton from "@/components/common/AIMasterButton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import ConnectYouTube from "@/components/projects/ConnectYouTube";
@@ -285,6 +286,7 @@ const YouTubePage = () => {
             <Youtube className="h-6 w-6 text-white" />
           </div>
           <div className="flex items-center gap-2">
+            <AIMasterButton />
             <ReconnectButton
               service="youtube"
               projectId={projectId || ''}
