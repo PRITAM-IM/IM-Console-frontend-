@@ -13,7 +13,10 @@ import {
   Monitor,
   Globe,
   BarChart3,
-  Percent
+  Percent,
+  DollarSign,
+  Target,
+  Zap
 } from "lucide-react";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import ReactCountryFlag from "react-country-flag";
@@ -50,9 +53,37 @@ const formatNumber = (num: number) => {
 };
 
 const formatDuration = (seconds: number) => {
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
+  // Convert from minutes to seconds if the value seems to be in minutes
+  // GA4 API returns duration in seconds, but our backend might return it in minutes
+  const actualSeconds = seconds < 10 ? seconds * 60 : seconds;
+  
+  const mins = Math.floor(actualSeconds / 60);
+  const secs = Math.floor(actualSeconds % 60);
+  
+  if (mins === 0) {
+    return `${secs}s`;
+  }
+  
   return `${mins}m ${secs}s`;
+};
+
+const formatChange = (change: number | undefined) => {
+  if (change === undefined || change === null) return null;
+  
+  // Cap extreme values at ±999%
+  const cappedChange = Math.max(-999, Math.min(999, change));
+  
+  const isPositive = cappedChange > 0;
+  const isNegative = cappedChange < 0;
+  const displayValue = Math.abs(cappedChange).toFixed(1);
+  
+  return (
+    <span className={`text-xs font-semibold ${
+      isPositive ? 'text-green-600' : isNegative ? 'text-red-600' : 'text-slate-500'
+    }`}>
+      {isPositive && '↑'}{isNegative && '↓'} {displayValue}%
+    </span>
+  );
 };
 
 // Country code mapping
@@ -106,6 +137,9 @@ const GoogleAnalyticsPage = () => {
   const [rangePreset, setRangePreset] = useState<DateRangePreset>("7d");
   const [customRange, setCustomRange] = useState<{ startDate?: string; endDate?: string }>({});
   const [activeRange, setActiveRange] = useState<DateRange>(() => buildDateRange("7d"));
+  
+  // State for switchable metric card
+  const [selectedAdditionalMetric, setSelectedAdditionalMetric] = useState<'conversions' | 'revenue' | 'engaged'>('conversions');
 
   const params = useMemo(
     () => ({
@@ -437,15 +471,20 @@ const GoogleAnalyticsPage = () => {
       ) : overview ? (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-            <Card className="bg-gradient-to-br from-orange-500 to-amber-500 text-white overflow-hidden">
+            <Card className="bg-white border-slate-200">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-orange-100 text-sm font-medium">Users</p>
-                    <p className="text-3xl font-bold mt-1">{formatNumber(overview?.totalUsers || 0)}</p>
+                    <p className="text-slate-600 text-sm font-medium">Users</p>
+                    <p className="text-3xl font-bold text-slate-900 mt-1">{formatNumber(overview?.totalUsers || 0)}</p>
+                    {overview?.totalUsersChange !== undefined && (
+                      <div className="mt-1">
+                        {formatChange(overview.totalUsersChange)}
+                      </div>
+                    )}
                   </div>
-                  <div className="p-3 bg-white/20 rounded-xl">
-                    <Users className="h-6 w-6" />
+                  <div className="p-3 bg-orange-100 rounded-xl">
+                    <Users className="h-6 w-6 text-orange-600" />
                   </div>
                 </div>
               </CardContent>
@@ -453,15 +492,20 @@ const GoogleAnalyticsPage = () => {
           </motion.div>
 
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-            <Card className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white overflow-hidden">
+            <Card className="bg-white border-slate-200">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-blue-100 text-sm font-medium">Sessions</p>
-                    <p className="text-3xl font-bold mt-1">{formatNumber(overview?.sessions || 0)}</p>
+                    <p className="text-slate-600 text-sm font-medium">Sessions</p>
+                    <p className="text-3xl font-bold text-slate-900 mt-1">{formatNumber(overview?.sessions || 0)}</p>
+                    {overview?.sessionsChange !== undefined && (
+                      <div className="mt-1">
+                        {formatChange(overview.sessionsChange)}
+                      </div>
+                    )}
                   </div>
-                  <div className="p-3 bg-white/20 rounded-xl">
-                    <MousePointer className="h-6 w-6" />
+                  <div className="p-3 bg-blue-100 rounded-xl">
+                    <MousePointer className="h-6 w-6 text-blue-600" />
                   </div>
                 </div>
               </CardContent>
@@ -469,15 +513,20 @@ const GoogleAnalyticsPage = () => {
           </motion.div>
 
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-            <Card className="bg-gradient-to-br from-emerald-500 to-teal-600 text-white overflow-hidden">
+            <Card className="bg-white border-slate-200">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-emerald-100 text-sm font-medium">Page Views</p>
-                    <p className="text-3xl font-bold mt-1">{formatNumber(overview?.screenPageViews || 0)}</p>
+                    <p className="text-slate-600 text-sm font-medium">Page Views</p>
+                    <p className="text-3xl font-bold text-slate-900 mt-1">{formatNumber(overview?.screenPageViews || 0)}</p>
+                    {overview?.pageviewsChange !== undefined && (
+                      <div className="mt-1">
+                        {formatChange(overview.pageviewsChange)}
+                      </div>
+                    )}
                   </div>
-                  <div className="p-3 bg-white/20 rounded-xl">
-                    <Eye className="h-6 w-6" />
+                  <div className="p-3 bg-emerald-100 rounded-xl">
+                    <Eye className="h-6 w-6 text-emerald-600" />
                   </div>
                 </div>
               </CardContent>
@@ -485,17 +534,22 @@ const GoogleAnalyticsPage = () => {
           </motion.div>
 
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
-            <Card className="bg-gradient-to-br from-purple-500 to-violet-600 text-white overflow-hidden">
+            <Card className="bg-white border-slate-200">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-purple-100 text-sm font-medium">Bounce Rate</p>
-                    <p className="text-3xl font-bold mt-1">
+                    <p className="text-slate-600 text-sm font-medium">Bounce Rate</p>
+                    <p className="text-3xl font-bold text-slate-900 mt-1">
                       {(overview?.bounceRate || 0).toFixed(1)}%
                     </p>
+                    {overview?.bounceRateChange !== undefined && (
+                      <div className="mt-1">
+                        {formatChange(overview.bounceRateChange)}
+                      </div>
+                    )}
                   </div>
-                  <div className="p-3 bg-white/20 rounded-xl">
-                    <Percent className="h-6 w-6" />
+                  <div className="p-3 bg-purple-100 rounded-xl">
+                    <Percent className="h-6 w-6 text-purple-600" />
                   </div>
                 </div>
               </CardContent>
@@ -503,14 +557,19 @@ const GoogleAnalyticsPage = () => {
           </motion.div>
 
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-            <Card className="bg-white">
+            <Card className="bg-white border-slate-200">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-slate-500 text-sm font-medium">Avg. Session Duration</p>
+                    <p className="text-slate-600 text-sm font-medium">Avg. Session Duration</p>
                     <p className="text-2xl font-bold text-slate-900 mt-1">
                       {formatDuration(overview?.averageSessionDuration || 0)}
                     </p>
+                    {overview?.averageSessionDurationChange !== undefined && (
+                      <div className="mt-1">
+                        {formatChange(overview.averageSessionDurationChange)}
+                      </div>
+                    )}
                   </div>
                   <div className="p-3 bg-orange-100 rounded-xl">
                     <Clock className="h-5 w-5 text-orange-600" />
@@ -521,14 +580,19 @@ const GoogleAnalyticsPage = () => {
           </motion.div>
 
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
-            <Card className="bg-white">
+            <Card className="bg-white border-slate-200">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-slate-500 text-sm font-medium">Engagement Rate</p>
+                    <p className="text-slate-600 text-sm font-medium">Engagement Rate</p>
                     <p className="text-2xl font-bold text-slate-900 mt-1">
                       {(overview?.engagementRate || 0).toFixed(1)}%
                     </p>
+                    {overview?.engagementRateChange !== undefined && (
+                      <div className="mt-1">
+                        {formatChange(overview.engagementRateChange)}
+                      </div>
+                    )}
                   </div>
                   <div className="p-3 bg-emerald-100 rounded-xl">
                     <TrendingUp className="h-5 w-5 text-emerald-600" />
@@ -539,14 +603,19 @@ const GoogleAnalyticsPage = () => {
           </motion.div>
 
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-            <Card className="bg-white">
+            <Card className="bg-white border-slate-200">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-slate-500 text-sm font-medium">New Users</p>
+                    <p className="text-slate-600 text-sm font-medium">New Users</p>
                     <p className="text-2xl font-bold text-slate-900 mt-1">
                       {formatNumber(overview?.newUsers || 0)}
                     </p>
+                    {overview?.newUsersChange !== undefined && (
+                      <div className="mt-1">
+                        {formatChange(overview.newUsersChange)}
+                      </div>
+                    )}
                   </div>
                   <div className="p-3 bg-blue-100 rounded-xl">
                     <Users className="h-5 w-5 text-blue-600" />
@@ -557,18 +626,84 @@ const GoogleAnalyticsPage = () => {
           </motion.div>
 
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}>
-            <Card className="bg-white">
+            <Card className="bg-white border-slate-200 relative">
               <CardContent className="pt-6">
+                {/* Dropdown Menu */}
+                <div className="absolute top-3 right-3">
+                  <select
+                    value={selectedAdditionalMetric}
+                    onChange={(e) => setSelectedAdditionalMetric(e.target.value as 'conversions' | 'revenue' | 'engaged')}
+                    className="text-xs px-2 py-1 pr-6 bg-white border border-slate-300 rounded-lg text-slate-700 font-medium cursor-pointer hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-orange-500 appearance-none shadow-sm"
+                    style={{
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
+                      backgroundPosition: 'right 0.25rem center',
+                      backgroundRepeat: 'no-repeat',
+                      backgroundSize: '1.25rem 1.25rem'
+                    }}
+                  >
+                    <option value="conversions">Conversions</option>
+                    <option value="revenue">Total Revenue</option>
+                    <option value="engaged">Engaged Sessions</option>
+                  </select>
+                </div>
+                
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-slate-500 text-sm font-medium">Sessions/User</p>
-                    <p className="text-2xl font-bold text-slate-900 mt-1">
-                      {(overview?.sessionsPerUser || 0).toFixed(2)}
-                    </p>
-                  </div>
-                  <div className="p-3 bg-purple-100 rounded-xl">
-                    <MousePointer className="h-5 w-5 text-purple-600" />
-                  </div>
+                  {selectedAdditionalMetric === 'conversions' && (
+                    <>
+                      <div>
+                        <p className="text-slate-600 text-sm font-medium">Conversions</p>
+                        <p className="text-2xl font-bold text-slate-900 mt-1">
+                          {formatNumber(overview?.conversions || 0)}
+                        </p>
+                        {overview?.conversionsChange !== undefined && (
+                          <div className="mt-1">
+                            {formatChange(overview.conversionsChange)}
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-3 bg-green-100 rounded-xl">
+                        <Target className="h-5 w-5 text-green-600" />
+                      </div>
+                    </>
+                  )}
+                  
+                  {selectedAdditionalMetric === 'revenue' && (
+                    <>
+                      <div>
+                        <p className="text-slate-600 text-sm font-medium">Total Revenue</p>
+                        <p className="text-2xl font-bold text-slate-900 mt-1">
+                          ₹{formatNumber(overview?.totalRevenue || 0)}
+                        </p>
+                        {overview?.totalRevenueChange !== undefined && (
+                          <div className="mt-1">
+                            {formatChange(overview.totalRevenueChange)}
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-3 bg-amber-100 rounded-xl">
+                        <DollarSign className="h-5 w-5 text-amber-600" />
+                      </div>
+                    </>
+                  )}
+                  
+                  {selectedAdditionalMetric === 'engaged' && (
+                    <>
+                      <div>
+                        <p className="text-slate-600 text-sm font-medium">Engaged Sessions</p>
+                        <p className="text-2xl font-bold text-slate-900 mt-1">
+                          {formatNumber(overview?.engagedSessions || 0)}
+                        </p>
+                        {overview?.engagedSessionsChange !== undefined && (
+                          <div className="mt-1">
+                            {formatChange(overview.engagedSessionsChange)}
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-3 bg-indigo-100 rounded-xl">
+                        <Zap className="h-5 w-5 text-indigo-600" />
+                      </div>
+                    </>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -596,8 +731,11 @@ const GoogleAnalyticsPage = () => {
                     <tr className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
                       <th className="text-left px-6 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Channel</th>
                       <th className="text-right px-4 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Users</th>
+                      <th className="text-right px-4 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">% Δ</th>
                       <th className="text-right px-4 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Sessions</th>
+                      <th className="text-right px-4 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">% Δ</th>
                       <th className="text-right px-4 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Bounce Rate</th>
+                      <th className="text-right px-4 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">% Δ</th>
                       <th className="text-right px-4 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Avg Duration</th>
                       <th className="text-right px-6 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Conversions</th>
                     </tr>
@@ -625,11 +763,20 @@ const GoogleAnalyticsPage = () => {
                         <td className="px-4 py-4 text-right text-sm font-medium text-slate-900">
                           {formatNumber(channel.totalUsers || 0)}
                         </td>
+                        <td className="px-4 py-4 text-right text-sm">
+                          {formatChange(channel.totalUsersChange)}
+                        </td>
                         <td className="px-4 py-4 text-right text-sm text-slate-700">
                           {formatNumber(channel.sessions || 0)}
                         </td>
+                        <td className="px-4 py-4 text-right text-sm">
+                          {formatChange(channel.sessionsChange)}
+                        </td>
                         <td className="px-4 py-4 text-right text-sm text-slate-700">
                           {(channel.bounceRate || 0).toFixed(1)}%
+                        </td>
+                        <td className="px-4 py-4 text-right text-sm">
+                          {formatChange(channel.bounceRateChange)}
                         </td>
                         <td className="px-4 py-4 text-right text-sm text-slate-700">
                           {formatDuration(channel.averageSessionDuration || 0)}

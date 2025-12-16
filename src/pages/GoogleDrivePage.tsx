@@ -5,6 +5,7 @@ import { HardDrive, Folder, FileText, Image, Video, Music, Archive, ExternalLink
 import LoadingState from "@/components/common/LoadingState";
 import ErrorState from "@/components/common/ErrorState";
 import ReconnectButton from "@/components/common/ReconnectButton";
+import DisconnectButton from "@/components/common/DisconnectButton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import ConnectGoogleDrive from "@/components/projects/ConnectGoogleDrive";
@@ -225,6 +226,12 @@ const GoogleDrivePage = () => {
             service="google-drive"
             projectId={projectId || ''}
             onReconnectSuccess={() => window.location.reload()}
+            variant="outline"
+          />
+          <DisconnectButton
+            service="google-drive"
+            projectId={projectId || ''}
+            onDisconnectSuccess={() => window.location.reload()}
             variant="outline"
           />
           <Button variant="outline" onClick={fetchDriveStats} disabled={loadingStats}>

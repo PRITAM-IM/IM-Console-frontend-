@@ -20,6 +20,7 @@ import {
 import LoadingState from "@/components/common/LoadingState";
 import ErrorState from "@/components/common/ErrorState";
 import ReconnectButton from "@/components/common/ReconnectButton";
+import DisconnectButton from "@/components/common/DisconnectButton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -358,6 +359,12 @@ const GoogleSheetsPage = () => {
               service="google-sheets"
               projectId={projectId || ''}
               onReconnectSuccess={() => window.location.reload()}
+              variant="outline"
+            />
+            <DisconnectButton
+              service="google-sheets"
+              projectId={projectId || ''}
+              onDisconnectSuccess={() => window.location.reload()}
               variant="outline"
             />
             <a
