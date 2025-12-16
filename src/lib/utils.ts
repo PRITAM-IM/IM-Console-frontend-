@@ -46,11 +46,12 @@ export function buildDateRange(
   const now = new Date();
   const todayInIST = toZonedTime(now, IST_TIMEZONE);
 
-  // For more accurate data, use yesterday as end date since today's data may be incomplete
-  // Google Analytics typically has 24-48 hour data processing delay
-  const useYesterdayAsEnd = options?.useYesterdayAsEnd ?? false;
+  // IMPORTANT: Date ranges exclude today and end on yesterday
+  // Example: today is 2025/12/16, last 7 days = 2025/12/09 to 2025/12/15
+  const yesterday = subDays(todayInIST, 1);
+  const useYesterdayAsEnd = options?.useYesterdayAsEnd ?? true; // Default to true
 
-  let endDate: Date = useYesterdayAsEnd ? subDays(todayInIST, 1) : todayInIST;
+  let endDate: Date = useYesterdayAsEnd ? yesterday : todayInIST;
   let startDate: Date;
 
   if (customRange?.startDate && customRange?.endDate) {
@@ -63,16 +64,16 @@ export function buildDateRange(
   switch (preset) {
     case "7d":
     case "last7days":
-      // Last 7 complete days (not including today for accuracy)
+      // Last 7 complete days: yesterday minus 6 days
       startDate = subDays(endDate, 6);
       break;
     case "30d":
     case "last30days":
-      // Last 30 complete days
+      // Last 30 complete days: yesterday minus 29 days
       startDate = subDays(endDate, 29);
       break;
     case "last28days":
-      // Last 28 complete days
+      // Last 28 complete days: yesterday minus 27 days
       startDate = subDays(endDate, 27);
       break;
     case "custom":

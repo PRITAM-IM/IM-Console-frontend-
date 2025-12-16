@@ -20,7 +20,7 @@ import {
 import api from "@/lib/api";
 
 interface ReconnectButtonProps {
-  service: 'google-analytics' | 'google-ads' | 'google-search-console' | 'youtube' | 'facebook' | 'instagram' | 'meta-ads' | 'linkedin' | 'google-sheets' | 'google-drive';
+  service: 'google-analytics' | 'google-ads' | 'google-search-console' | 'youtube' | 'facebook' | 'instagram' | 'meta-ads' | 'linkedin' | 'google-sheets' | 'google-drive' | 'google-places';
   projectId: string;
   onReconnectSuccess?: () => void;
   variant?: 'default' | 'outline' | 'ghost' | 'destructive' | 'secondary';
@@ -169,6 +169,18 @@ const SERVICE_CONFIG: Record<string, {
     icon: '💾',
     description: 'Access files and folders',
     itemLabel: 'Folder'
+  },
+  'google-places': {
+    name: 'Google Places',
+    authEndpoint: '/google-places/auth',
+    itemsEndpoint: '/google-places/locations',
+    saveEndpoint: '/google-places/location',
+    itemIdField: 'locationId',
+    gradient: 'from-red-500 to-orange-500',
+    iconBg: 'bg-red-100',
+    icon: '📍',
+    description: 'Connect your business location',
+    itemLabel: 'Location'
   },
 };
 

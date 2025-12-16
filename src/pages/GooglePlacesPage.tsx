@@ -16,6 +16,8 @@ import { Button } from "@/components/ui/button";
 import LoadingState from "@/components/common/LoadingState";
 import ErrorState from "@/components/common/ErrorState";
 import AIMasterButton from "@/components/common/AIMasterButton";
+import ReconnectButton from "@/components/common/ReconnectButton";
+import DisconnectButton from "@/components/common/DisconnectButton";
 import ConnectGooglePlaces from "@/components/projects/ConnectGooglePlaces";
 import api from "@/lib/api";
 import type { Project } from "@/types";
@@ -228,6 +230,16 @@ const GooglePlacesPage = () => {
         </div>
         <div className="flex items-center gap-2">
           <AIMasterButton />
+          <ReconnectButton
+            service="google-places"
+            projectId={projectId || ''}
+            onReconnectSuccess={fetchProject}
+          />
+          <DisconnectButton
+            service="google-places"
+            projectId={projectId || ''}
+            onDisconnectSuccess={fetchProject}
+          />
           <Button onClick={() => fetchPlaceData()} disabled={loadingData} variant="outline">
             <RefreshCw className={`mr-2 h-4 w-4 ${loadingData ? "animate-spin" : ""}`} />
             Refresh

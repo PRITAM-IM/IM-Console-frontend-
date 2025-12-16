@@ -38,6 +38,7 @@ import DateRangeSelector from "@/components/dashboard/DateRangeSelector";
 import LoadingState from "@/components/common/LoadingState";
 import ErrorState from "@/components/common/ErrorState";
 import ReconnectButton from "@/components/common/ReconnectButton";
+import DisconnectButton from "@/components/common/DisconnectButton";
 import AIMasterButton from "@/components/common/AIMasterButton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -313,6 +314,13 @@ const FacebookPage = () => {
             service="facebook"
             projectId={projectId || ''}
             onReconnectSuccess={() => window.location.reload()}
+            variant="ghost"
+            className="text-white border-white/20 hover:bg-white/10"
+          />
+          <DisconnectButton
+            service="facebook"
+            projectId={projectId || ''}
+            onDisconnectSuccess={() => window.location.reload()}
             variant="ghost"
             className="text-white border-white/20 hover:bg-white/10"
           />

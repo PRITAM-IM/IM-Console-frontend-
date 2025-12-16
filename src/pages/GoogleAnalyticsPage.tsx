@@ -22,6 +22,7 @@ import LoadingState from "@/components/common/LoadingState";
 import ErrorState from "@/components/common/ErrorState";
 import EmptyState from "@/components/common/EmptyState";
 import ReconnectButton from "@/components/common/ReconnectButton";
+import DisconnectButton from "@/components/common/DisconnectButton";
 import AIMasterButton from "@/components/common/AIMasterButton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -404,6 +405,11 @@ const GoogleAnalyticsPage = () => {
             service="google-analytics"
             projectId={projectId || ''}
             onReconnectSuccess={fetchProject}
+          />
+          <DisconnectButton
+            service="google-analytics"
+            projectId={projectId || ''}
+            onDisconnectSuccess={fetchProject}
           />
           <Button variant="outline" onClick={handleRefresh} disabled={loadingAnalytics}>
             <RefreshCw className={`h-4 w-4 mr-2 ${loadingAnalytics ? 'animate-spin' : ''}`} />

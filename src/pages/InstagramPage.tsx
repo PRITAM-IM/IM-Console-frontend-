@@ -23,6 +23,7 @@ import ReactCountryFlag from "react-country-flag";
 import LoadingState from "@/components/common/LoadingState";
 import ErrorState from "@/components/common/ErrorState";
 import ReconnectButton from "@/components/common/ReconnectButton";
+import DisconnectButton from "@/components/common/DisconnectButton";
 import AIMasterButton from "@/components/common/AIMasterButton";
 import EmptyState from "@/components/common/EmptyState";
 import { Button } from "@/components/ui/button";
@@ -191,6 +192,11 @@ const InstagramPage = () => {
             service="instagram"
             projectId={projectId || ''}
             onReconnectSuccess={() => window.location.reload()}
+          />
+          <DisconnectButton
+            service="instagram"
+            projectId={projectId || ''}
+            onDisconnectSuccess={() => window.location.reload()}
           />
           <Button variant="outline" onClick={fetchInstagramData} disabled={loadingData}>
             <RefreshCw className={`h-4 w-4 mr-2 ${loadingData ? 'animate-spin' : ''}`} />

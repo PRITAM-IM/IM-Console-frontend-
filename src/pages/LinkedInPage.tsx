@@ -15,6 +15,7 @@ import {
 import LoadingState from "@/components/common/LoadingState";
 import ErrorState from "@/components/common/ErrorState";
 import ReconnectButton from "@/components/common/ReconnectButton";
+import DisconnectButton from "@/components/common/DisconnectButton";
 import AIMasterButton from "@/components/common/AIMasterButton";
 import EmptyState from "@/components/common/EmptyState";
 import { Button } from "@/components/ui/button";
@@ -239,6 +240,11 @@ const LinkedInPage = () => {
             service="linkedin"
             projectId={projectId || ''}
             onReconnectSuccess={() => window.location.reload()}
+          />
+          <DisconnectButton
+            service="linkedin"
+            projectId={projectId || ''}
+            onDisconnectSuccess={() => window.location.reload()}
           />
           <Button 
             variant="outline" 

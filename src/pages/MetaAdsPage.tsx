@@ -35,6 +35,7 @@ import LoadingState from "@/components/common/LoadingState";
 import ErrorState from "@/components/common/ErrorState";
 import EmptyState from "@/components/common/EmptyState";
 import ReconnectButton from "@/components/common/ReconnectButton";
+import DisconnectButton from "@/components/common/DisconnectButton";
 import AIMasterButton from "@/components/common/AIMasterButton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -300,6 +301,11 @@ const MetaAdsPage = () => {
             service="meta-ads"
             projectId={projectId || ''}
             onReconnectSuccess={() => window.location.reload()}
+          />
+          <DisconnectButton
+            service="meta-ads"
+            projectId={projectId || ''}
+            onDisconnectSuccess={() => window.location.reload()}
           />
           <Button variant="outline" onClick={fetchMetaAdsData} disabled={loadingData}>
             <RefreshCw className={`h-4 w-4 mr-2 ${loadingData ? 'animate-spin' : ''}`} />

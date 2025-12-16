@@ -88,14 +88,15 @@ const DashboardOverviewPage = () => {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [showMagicSuggestions, setShowMagicSuggestions] = useState(false);
 
-  // Date range for the last 7 days
+  // Date range for the last 7 days (excluding today, ending on yesterday)
   const getDateRange = () => {
-    const endDate = new Date();
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - 7);
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const startDate = new Date(yesterday);
+    startDate.setDate(startDate.getDate() - 6);
     return {
       startDate: startDate.toISOString().split("T")[0],
-      endDate: endDate.toISOString().split("T")[0],
+      endDate: yesterday.toISOString().split("T")[0],
     };
   };
 

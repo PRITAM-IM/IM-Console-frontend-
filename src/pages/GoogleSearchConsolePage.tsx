@@ -21,6 +21,7 @@ import DateRangeSelector from "@/components/dashboard/DateRangeSelector";
 import LoadingState from "@/components/common/LoadingState";
 import ErrorState from "@/components/common/ErrorState";
 import ReconnectButton from "@/components/common/ReconnectButton";
+import DisconnectButton from "@/components/common/DisconnectButton";
 import AIMasterButton from "@/components/common/AIMasterButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -282,6 +283,11 @@ const GoogleSearchConsolePage = () => {
             service="google-search-console"
             projectId={projectId || ''}
             onReconnectSuccess={() => window.location.reload()}
+          />
+          <DisconnectButton
+            service="google-search-console"
+            projectId={projectId || ''}
+            onDisconnectSuccess={() => window.location.reload()}
           />
           <Button variant="outline" onClick={fetchSearchConsoleData} disabled={loadingData}>
             <RefreshCw className={`h-4 w-4 mr-2 ${loadingData ? 'animate-spin' : ''}`} />

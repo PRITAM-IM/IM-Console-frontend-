@@ -29,7 +29,6 @@ export interface Project {
   websiteUrl: string;
   gaPropertyId?: string;
   googleAdsCustomerId?: string;
-  googleAdsManagerId?: string;  // MCC/Manager account ID for login-customer-id header
   googleAdsCurrency?: string;  // Currency code from Google Ads account
   searchConsoleSiteUrl?: string;
   youtubeChannelId?: string;

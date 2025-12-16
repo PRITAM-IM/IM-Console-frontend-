@@ -30,6 +30,7 @@ import LoadingState from "@/components/common/LoadingState";
 import ErrorState from "@/components/common/ErrorState";
 import EmptyState from "@/components/common/EmptyState";
 import ReconnectButton from "@/components/common/ReconnectButton";
+import DisconnectButton from "@/components/common/DisconnectButton";
 import AIMasterButton from "@/components/common/AIMasterButton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -291,6 +292,13 @@ const YouTubePage = () => {
               service="youtube"
               projectId={projectId || ''}
               onReconnectSuccess={() => window.location.reload()}
+              variant="ghost"
+              className="text-white border-white/20 hover:bg-white/10"
+            />
+            <DisconnectButton
+              service="youtube"
+              projectId={projectId || ''}
+              onDisconnectSuccess={() => window.location.reload()}
               variant="ghost"
               className="text-white border-white/20 hover:bg-white/10"
             />
