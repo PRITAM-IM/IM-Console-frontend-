@@ -1,14 +1,31 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import Header from "@/components/navigation/Header";
 import MainSidebar from "@/components/dashboard/MainSidebar";
 import ProjectSelector from "@/components/dashboard/ProjectSelector";
+import FloatingChatButton from "@/components/chat/FloatingChatButton";
 import { Button } from "@/components/ui/button";
 
 const DashboardLayout = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { projectId } = useParams<{ projectId: string }>();
+
+  // Get date range for last 7 days (excluding today)
+  const getDateRange = () => {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1); // End on yesterday
+    
+    const startDate = new Date(yesterday);
+    startDate.setDate(startDate.getDate() - 6); // 7 days total (including yesterday)
+    
+    return {
+      startDate: startDate.toISOString().split('T')[0],
+      endDate: yesterday.toISOString().split('T')[0],
+    };
+  };
 
   return (
     <div className="flex flex-col h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50 overflow-hidden">
@@ -61,6 +78,9 @@ const DashboardLayout = () => {
           </div>
         </motion.main>
       </div>
+
+      {/* Avi AI Chatbot - Available on all dashboard pages */}
+      {projectId && <FloatingChatButton projectId={projectId} dateRange={getDateRange()} />}
     </div>
   );
 };
