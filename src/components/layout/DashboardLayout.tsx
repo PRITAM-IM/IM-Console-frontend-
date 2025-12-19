@@ -1,4 +1,4 @@
-import { Outlet, useParams } from "react-router-dom";
+import { Outlet, useParams, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
@@ -11,6 +11,22 @@ import { Button } from "@/components/ui/button";
 const DashboardLayout = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { projectId } = useParams<{ projectId: string }>();
+  const location = useLocation();
+
+  // Determine page context from URL path
+  const getPageContext = (): 'overview' | 'analytics' | 'youtube' | 'facebook' | 'instagram' | 'meta-ads' | 'google-ads' | 'search-console' | 'linkedin' | undefined => {
+    const path = location.pathname;
+    if (path.includes('/youtube')) return 'youtube';
+    if (path.includes('/google-analytics')) return 'analytics';
+    if (path.includes('/facebook')) return 'facebook';
+    if (path.includes('/instagram')) return 'instagram';
+    if (path.includes('/meta-ads')) return 'meta-ads';
+    if (path.includes('/google-ads')) return 'google-ads';
+    if (path.includes('/google-search-console')) return 'search-console';
+    if (path.includes('/linkedin')) return 'linkedin';
+    if (path.includes('/overview')) return 'overview';
+    return undefined;
+  };
 
   // Get date range for last 7 days (excluding today)
   const getDateRange = () => {
@@ -80,7 +96,13 @@ const DashboardLayout = () => {
       </div>
 
       {/* Avi AI Chatbot - Available on all dashboard pages */}
-      {projectId && <FloatingChatButton projectId={projectId} dateRange={getDateRange()} />}
+      {projectId && (
+        <FloatingChatButton 
+          projectId={projectId} 
+          dateRange={getDateRange()} 
+          pageContext={getPageContext()}
+        />
+      )}
     </div>
   );
 };

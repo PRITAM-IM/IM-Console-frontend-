@@ -9,11 +9,13 @@ interface FloatingChatButtonProps {
     startDate: string;
     endDate: string;
   };
+  pageContext?: 'overview' | 'analytics' | 'youtube' | 'facebook' | 'instagram' | 'meta-ads' | 'google-ads' | 'search-console' | 'linkedin';
 }
 
 const FloatingChatButton: React.FC<FloatingChatButtonProps> = ({
   projectId,
   dateRange,
+  pageContext,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -67,6 +69,7 @@ const FloatingChatButton: React.FC<FloatingChatButtonProps> = ({
               projectId={projectId}
               onClose={() => setIsOpen(false)}
               dateRange={dateRange}
+              pageContext={pageContext}
             />
           </motion.div>
         )}

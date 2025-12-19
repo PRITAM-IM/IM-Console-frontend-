@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Loader2, AlertCircle, Sparkles } from 'lucide-react';
+import { AlertCircle, Sparkles } from 'lucide-react';
 import ChatHeader from './ChatHeader';
 import ChatMessage from './ChatMessage';
 import ChatInput from './ChatInput';
@@ -20,25 +20,88 @@ interface ChatBotProps {
     startDate: string;
     endDate: string;
   };
+  pageContext?: 'overview' | 'analytics' | 'youtube' | 'facebook' | 'instagram' | 'meta-ads' | 'google-ads' | 'search-console' | 'linkedin';
 }
 
-const ChatBot: React.FC<ChatBotProps> = ({ projectId, onClose, dateRange }) => {
+const ChatBot: React.FC<ChatBotProps> = ({ projectId, onClose, dateRange, pageContext }) => {
+  // Storage keys for persistence
+  const STORAGE_KEY_MESSAGES = `chat_messages_${projectId}`;
+  const STORAGE_KEY_CONVERSATION = `chat_conversation_${projectId}`;
+  const STORAGE_KEY_USED_PRESETS = `chat_used_presets_${projectId}`;
+
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
   const [conversationId, setConversationId] = useState<string | undefined>();
   const [isLoading, setIsLoading] = useState(false);
   const [loadingStage, setLoadingStage] = useState<'thinking' | 'analyzing' | 'ready'>('thinking');
   const [error, setError] = useState<string | null>(null);
   const [presetQuestions, setPresetQuestions] = useState<PresetQuestion[]>([]);
-  const [showPresets, setShowPresets] = useState(true);
+  const [usedPresetIds, setUsedPresetIds] = useState<Set<string>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+
+  // Load persisted data on mount
+  useEffect(() => {
+    try {
+      // Load messages from localStorage
+      const savedMessages = localStorage.getItem(STORAGE_KEY_MESSAGES);
+      if (savedMessages) {
+        const parsedMessages = JSON.parse(savedMessages);
+        setMessages(parsedMessages);
+      }
+
+      // Load conversation ID from localStorage
+      const savedConversationId = localStorage.getItem(STORAGE_KEY_CONVERSATION);
+      if (savedConversationId) {
+        setConversationId(savedConversationId);
+      }
+
+      // Load used preset IDs from localStorage
+      const savedUsedPresets = localStorage.getItem(STORAGE_KEY_USED_PRESETS);
+      if (savedUsedPresets) {
+        setUsedPresetIds(new Set(JSON.parse(savedUsedPresets)));
+      }
+    } catch (error) {
+      console.error('Error loading chat data from localStorage:', error);
+    }
+  }, [projectId]);
+
+  // Persist messages to localStorage whenever they change
+  useEffect(() => {
+    if (messages.length > 0) {
+      try {
+        localStorage.setItem(STORAGE_KEY_MESSAGES, JSON.stringify(messages));
+      } catch (error) {
+        console.error('Error saving messages to localStorage:', error);
+      }
+    }
+  }, [messages, STORAGE_KEY_MESSAGES]);
+
+  // Persist conversation ID to localStorage whenever it changes
+  useEffect(() => {
+    if (conversationId) {
+      try {
+        localStorage.setItem(STORAGE_KEY_CONVERSATION, conversationId);
+      } catch (error) {
+        console.error('Error saving conversation ID to localStorage:', error);
+      }
+    }
+  }, [conversationId, STORAGE_KEY_CONVERSATION]);
+
+  // Persist used preset IDs to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_USED_PRESETS, JSON.stringify(Array.from(usedPresetIds)));
+    } catch (error) {
+      console.error('Error saving used presets to localStorage:', error);
+    }
+  }, [usedPresetIds, STORAGE_KEY_USED_PRESETS]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Send initial greeting message
+  // Send initial greeting message only if no persisted messages
   useEffect(() => {
     if (messages.length === 0) {
       const greetingMessage: ChatMessageType = {
@@ -51,13 +114,16 @@ const ChatBot: React.FC<ChatBotProps> = ({ projectId, onClose, dateRange }) => {
       };
       setMessages([greetingMessage]);
     }
-  }, []);
+  }, []); // Only run once on mount
 
-  // Fetch preset questions
+  // Fetch preset questions based on page context
   useEffect(() => {
     const fetchPresetQuestions = async () => {
       try {
-        const response = await api.get(`/chat/preset-questions/${projectId}`);
+        const url = pageContext
+          ? `/chat/preset-questions/${projectId}?context=${pageContext}`
+          : `/chat/preset-questions/${projectId}`;
+        const response = await api.get(url);
         if (response.data.success) {
           setPresetQuestions(response.data.data);
         }
@@ -68,7 +134,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ projectId, onClose, dateRange }) => {
     };
 
     fetchPresetQuestions();
-  }, [projectId]);
+  }, [projectId, pageContext]);
 
   // Multi-stage loading effect
   useEffect(() => {
@@ -88,7 +154,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ projectId, onClose, dateRange }) => {
     if (!message.trim() || isLoading) return;
 
     setError(null);
-    setShowPresets(false); // Hide presets after first message
+    // No longer hide presets after first message - keep them visible
 
     // Add user message to UI immediately
     const userMessage: ChatMessageType = {
@@ -148,7 +214,9 @@ const ChatBot: React.FC<ChatBotProps> = ({ projectId, onClose, dateRange }) => {
     }
   };
 
-  const handlePresetClick = (question: string) => {
+  const handlePresetClick = (presetId: string, question: string) => {
+    // Mark this preset as used
+    setUsedPresetIds(prev => new Set([...prev, presetId]));
     handleSendMessage(question);
   };
 
@@ -156,9 +224,39 @@ const ChatBot: React.FC<ChatBotProps> = ({ projectId, onClose, dateRange }) => {
     setError(null);
   };
 
+  const handleClearChat = () => {
+    if (confirm('Are you sure you want to clear all chat history? This cannot be undone.')) {
+      // Clear all state
+      setMessages([]);
+      setConversationId(undefined);
+      setUsedPresetIds(new Set());
+      setError(null);
+
+      // Clear localStorage
+      try {
+        localStorage.removeItem(STORAGE_KEY_MESSAGES);
+        localStorage.removeItem(STORAGE_KEY_CONVERSATION);
+        localStorage.removeItem(STORAGE_KEY_USED_PRESETS);
+      } catch (error) {
+        console.error('Error clearing localStorage:', error);
+      }
+
+      // Re-add greeting message
+      const greetingMessage: ChatMessageType = {
+        _id: 'greeting',
+        conversationId: '',
+        userId: '',
+        role: 'assistant',
+        content: "Hi! I'm Avi, your AI marketing analyst. I can help you understand your marketing metrics, identify trends, and suggest optimization strategies. What would you like to know?",
+        timestamp: new Date().toISOString(),
+      };
+      setMessages([greetingMessage]);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full bg-white rounded-lg shadow-xl overflow-hidden">
-      <ChatHeader onClose={onClose} />
+      <ChatHeader onClose={onClose} onClearChat={handleClearChat} />
 
       {/* Messages Container */}
       <div
@@ -170,39 +268,67 @@ const ChatBot: React.FC<ChatBotProps> = ({ projectId, onClose, dateRange }) => {
           <ChatMessage key={message._id || index} message={message} />
         ))}
 
-        {/* Preset Questions - Show only before first user message */}
-        {showPresets && presetQuestions.length > 0 && messages.length === 1 && (
-          <div className="mb-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Sparkles className="h-4 w-4 text-purple-600" />
-              <p className="text-sm font-medium text-gray-700">Quick questions to get started:</p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {presetQuestions.slice(0, 6).map((preset) => (
-                <button
-                  key={preset.id}
-                  onClick={() => handlePresetClick(preset.question)}
-                  disabled={isLoading}
-                  className="text-left p-3 bg-white border border-gray-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group"
-                >
-                  <div className="flex items-start gap-2">
-                    <span className="text-lg flex-shrink-0">{preset.icon}</span>
-                    <span className="text-sm text-gray-700 group-hover:text-blue-700">
+        {/* Preset Questions - Decrease with every message: 5→4→3→2→1→0 */}
+        {presetQuestions.length > 0 && (() => {
+          // Calculate how many presets to show based on message count
+          // Start with 5, decrease by 1 for every 2 messages (user + assistant pair)
+          // Greeting message doesn't count, so subtract 1 from total
+          const messageCount = Math.max(0, messages.length - 1); // Exclude greeting
+          const messagePairs = Math.floor(messageCount / 2); // Count conversation turns
+          const presetsToShow = Math.max(0, 5 - messagePairs);
+
+          if (presetsToShow === 0) return null;
+
+          // Filter out used presets and limit to calculated amount
+          const availablePresets = presetQuestions
+            .filter(preset => !usedPresetIds.has(preset.id))
+            .slice(0, presetsToShow);
+
+          if (availablePresets.length === 0) return null;
+
+          return (
+            <div className="mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="h-3.5 w-3.5 text-purple-600" />
+                <p className="text-xs font-medium text-gray-600">
+                  {pageContext ? `Quick questions (${availablePresets.length}):` : `Suggested questions (${availablePresets.length}):`}
+                </p>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                {availablePresets.map((preset) => (
+                  <button
+                    key={preset.id}
+                    onClick={() => handlePresetClick(preset.id, preset.question)}
+                    disabled={isLoading}
+                    className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-md hover:border-blue-400 hover:bg-blue-50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group shadow-sm hover:shadow text-left"
+                  >
+                    <span className="text-sm flex-shrink-0">{preset.icon}</span>
+                    <span className="text-xs text-gray-700 group-hover:text-blue-700 font-medium line-clamp-2">
                       {preset.question}
                     </span>
-                  </div>
-                </button>
-              ))}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
-        {/* Enhanced Loading Indicator with Progressive Stages */}
+        {/* Animated Robot Loading Indicator */}
         {isLoading && (
           <div className="flex justify-start mb-4">
             <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg px-4 py-3 shadow-sm">
               <div className="flex items-center gap-3">
-                <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+                {/* Animated Robot Emoji */}
+                <div className="relative">
+                  <span
+                    className="text-2xl inline-block animate-bounce"
+                    style={{
+                      animation: 'bounce 1s ease-in-out infinite, pulse 2s ease-in-out infinite'
+                    }}
+                  >
+                    🤖
+                  </span>
+                </div>
                 <div className="flex flex-col">
                   <span className="text-sm font-medium text-gray-800">
                     {loadingStage === 'thinking' && 'Avi is thinking...'}
@@ -210,15 +336,12 @@ const ChatBot: React.FC<ChatBotProps> = ({ projectId, onClose, dateRange }) => {
                     {loadingStage === 'ready' && 'Avi is preparing insights...'}
                   </span>
                   <div className="flex gap-1 mt-1">
-                    <div className={`h-1 w-8 rounded-full transition-all duration-300 ${
-                      loadingStage === 'thinking' ? 'bg-blue-600' : 'bg-blue-200'
-                    }`} />
-                    <div className={`h-1 w-8 rounded-full transition-all duration-300 ${
-                      loadingStage === 'analyzing' ? 'bg-blue-600' : 'bg-blue-200'
-                    }`} />
-                    <div className={`h-1 w-8 rounded-full transition-all duration-300 ${
-                      loadingStage === 'ready' ? 'bg-blue-600' : 'bg-blue-200'
-                    }`} />
+                    <div className={`h-1 w-8 rounded-full transition-all duration-300 ${loadingStage === 'thinking' ? 'bg-blue-600' : 'bg-blue-200'
+                      }`} />
+                    <div className={`h-1 w-8 rounded-full transition-all duration-300 ${loadingStage === 'analyzing' ? 'bg-blue-600' : 'bg-blue-200'
+                      }`} />
+                    <div className={`h-1 w-8 rounded-full transition-all duration-300 ${loadingStage === 'ready' ? 'bg-blue-600' : 'bg-blue-200'
+                      }`} />
                   </div>
                 </div>
               </div>

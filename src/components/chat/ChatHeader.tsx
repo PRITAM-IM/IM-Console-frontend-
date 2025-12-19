@@ -1,11 +1,12 @@
 import React from 'react';
-import { X, Bot } from 'lucide-react';
+import { X, Bot, Trash2 } from 'lucide-react';
 
 interface ChatHeaderProps {
   onClose: () => void;
+  onClearChat?: () => void;
 }
 
-const ChatHeader: React.FC<ChatHeaderProps> = ({ onClose }) => {
+const ChatHeader: React.FC<ChatHeaderProps> = ({ onClose, onClearChat }) => {
   return (
     <div className="flex items-center justify-between border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3">
       <div className="flex items-center gap-3">
@@ -19,13 +20,25 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({ onClose }) => {
           </p>
         </div>
       </div>
-      <button
-        onClick={onClose}
-        className="rounded-lg p-1 text-white hover:bg-white/20 transition-colors"
-        aria-label="Close chat"
-      >
-        <X className="h-6 w-6" />
-      </button>
+      <div className="flex items-center gap-2">
+        {onClearChat && (
+          <button
+            onClick={onClearChat}
+            className="rounded-lg p-1.5 text-white hover:bg-white/20 transition-colors"
+            aria-label="Clear chat history"
+            title="Clear chat history"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        )}
+        <button
+          onClick={onClose}
+          className="rounded-lg p-1 text-white hover:bg-white/20 transition-colors"
+          aria-label="Close chat"
+        >
+          <X className="h-6 w-6" />
+        </button>
+      </div>
     </div>
   );
 };
