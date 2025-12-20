@@ -39,6 +39,7 @@ import GooglePlacesPage from "@/pages/GooglePlacesPage";
 import TemplatesPage from "@/pages/TemplatesPage";
 import TemplateBuilderPage from "@/pages/TemplateBuilderPage";
 import AIMasterPage from "@/pages/AIMasterPage";
+import RevenueOpportunitiesPage from "@/pages/RevenueOpportunitiesPage";
 import DashboardIndex from "@/pages/DashboardIndex";
 import NotFoundPage from "@/pages/NotFoundPage";
 import LoadingState from "@/components/common/LoadingState";
@@ -102,6 +103,7 @@ const App = () => (
             <Route path="/dashboard/:projectId/drive" element={<GoogleDrivePage />} />
             <Route path="/dashboard/:projectId/linkedin" element={<LinkedInPage />} />
             <Route path="/dashboard/:projectId/places" element={<GooglePlacesPage />} />
+            <Route path="/dashboard/:projectId/revenue-opportunities" element={<RevenueOpportunitiesPage />} />
           </Route>
         </Route>
 

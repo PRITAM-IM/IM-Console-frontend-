@@ -24,10 +24,9 @@ interface ChatBotProps {
 }
 
 const ChatBot: React.FC<ChatBotProps> = ({ projectId, onClose, dateRange, pageContext }) => {
-  // Storage keys for persistence
-  const STORAGE_KEY_MESSAGES = `chat_messages_${projectId}`;
-  const STORAGE_KEY_CONVERSATION = `chat_conversation_${projectId}`;
+  // Storage key for used preset questions (UI state only)
   const STORAGE_KEY_USED_PRESETS = `chat_used_presets_${projectId}`;
+
 
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
   const [conversationId, setConversationId] = useState<string | undefined>();
@@ -38,83 +37,87 @@ const ChatBot: React.FC<ChatBotProps> = ({ projectId, onClose, dateRange, pageCo
   const [usedPresetIds, setUsedPresetIds] = useState<Set<string>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
 
-  // Load persisted data on mount
+  // Load conversation history from backend on mount
   useEffect(() => {
-    try {
-      // Load messages from localStorage
-      const savedMessages = localStorage.getItem(STORAGE_KEY_MESSAGES);
-      if (savedMessages) {
-        const parsedMessages = JSON.parse(savedMessages);
-        setMessages(parsedMessages);
-      }
+    const loadConversationHistory = async () => {
+      try {
+        // Try to get the last conversation for this project from backend
+        const response = await api.get(`/chat/conversations/${projectId}`);
 
-      // Load conversation ID from localStorage
-      const savedConversationId = localStorage.getItem(STORAGE_KEY_CONVERSATION);
-      if (savedConversationId) {
-        setConversationId(savedConversationId);
-      }
+        if (response.data.success && response.data.data.length > 0) {
+          // Get the most recent conversation
+          const lastConversation = response.data.data[0];
+          setConversationId(lastConversation._id);
 
-      // Load used preset IDs from localStorage
-      const savedUsedPresets = localStorage.getItem(STORAGE_KEY_USED_PRESETS);
-      if (savedUsedPresets) {
-        setUsedPresetIds(new Set(JSON.parse(savedUsedPresets)));
+          // Fetch messages for this conversation
+          const messagesResponse = await api.get(`/chat/conversations/${lastConversation._id}/messages`);
+
+          if (messagesResponse.data.success && messagesResponse.data.data.length > 0) {
+            setMessages(messagesResponse.data.data);
+          }
+        }
+
+        setIsDataLoaded(true);
+      } catch (error) {
+        console.error('Error loading conversation history:', error);
+        setIsDataLoaded(true);
       }
-    } catch (error) {
-      console.error('Error loading chat data from localStorage:', error);
-    }
+    };
+
+    loadConversationHistory();
   }, [projectId]);
-
-  // Persist messages to localStorage whenever they change
-  useEffect(() => {
-    if (messages.length > 0) {
-      try {
-        localStorage.setItem(STORAGE_KEY_MESSAGES, JSON.stringify(messages));
-      } catch (error) {
-        console.error('Error saving messages to localStorage:', error);
-      }
-    }
-  }, [messages, STORAGE_KEY_MESSAGES]);
-
-  // Persist conversation ID to localStorage whenever it changes
-  useEffect(() => {
-    if (conversationId) {
-      try {
-        localStorage.setItem(STORAGE_KEY_CONVERSATION, conversationId);
-      } catch (error) {
-        console.error('Error saving conversation ID to localStorage:', error);
-      }
-    }
-  }, [conversationId, STORAGE_KEY_CONVERSATION]);
 
   // Persist used preset IDs to localStorage
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY_USED_PRESETS, JSON.stringify(Array.from(usedPresetIds)));
-    } catch (error) {
-      console.error('Error saving used presets to localStorage:', error);
+    if (isDataLoaded) {
+      try {
+        localStorage.setItem(STORAGE_KEY_USED_PRESETS, JSON.stringify(Array.from(usedPresetIds)));
+      } catch (error) {
+        console.error('Error saving used presets to localStorage:', error);
+      }
     }
-  }, [usedPresetIds, STORAGE_KEY_USED_PRESETS]);
+  }, [usedPresetIds, STORAGE_KEY_USED_PRESETS, isDataLoaded]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Send initial greeting message only if no persisted messages
+  // Send initial greeting message only if no conversation history AND data is loaded
   useEffect(() => {
-    if (messages.length === 0) {
+    if (isDataLoaded && messages.length === 0) {
       const greetingMessage: ChatMessageType = {
         _id: 'greeting',
         conversationId: '',
         userId: '',
         role: 'assistant',
-        content: "Hi! I'm Avi, your AI marketing analyst. I can help you understand your marketing metrics, identify trends, and suggest optimization strategies. What would you like to know?",
+        content: `Hi! 👋 I'm **Avi**, your AI marketing analyst.
+
+I have access to all your marketing data and can help you with:
+
+📊 **Analytics & Performance**
+• Traffic analysis and user behavior
+• Conversion rates and revenue insights
+• Channel performance comparisons
+
+📈 **Marketing Insights**
+• Google Ads & Meta Ads performance
+• Social media engagement (Facebook, Instagram, LinkedIn)
+• SEO performance and search rankings
+
+💡 **Strategic Recommendations**
+• Optimization opportunities
+• Budget allocation suggestions
+• Trend identification and forecasting
+
+**What would you like to explore today?**`,
         timestamp: new Date().toISOString(),
       };
       setMessages([greetingMessage]);
     }
-  }, []); // Only run once on mount
+  }, [isDataLoaded, messages.length]); // Run when data is loaded or messages change
 
   // Fetch preset questions based on page context
   useEffect(() => {
@@ -175,6 +178,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ projectId, onClose, dateRange, pageCo
         message,
         conversationId,
         dateRange,
+        pageContext, // Add current page context
       };
 
       const response = await api.post('/chat/message', requestData);
@@ -224,33 +228,59 @@ const ChatBot: React.FC<ChatBotProps> = ({ projectId, onClose, dateRange, pageCo
     setError(null);
   };
 
-  const handleClearChat = () => {
+  const handleClearChat = async () => {
     if (confirm('Are you sure you want to clear all chat history? This cannot be undone.')) {
-      // Clear all state
-      setMessages([]);
-      setConversationId(undefined);
-      setUsedPresetIds(new Set());
-      setError(null);
-
-      // Clear localStorage
       try {
-        localStorage.removeItem(STORAGE_KEY_MESSAGES);
-        localStorage.removeItem(STORAGE_KEY_CONVERSATION);
-        localStorage.removeItem(STORAGE_KEY_USED_PRESETS);
-      } catch (error) {
-        console.error('Error clearing localStorage:', error);
-      }
+        // Delete conversation from backend if it exists
+        if (conversationId) {
+          await api.delete(`/chat/conversations/${conversationId}`);
+        }
 
-      // Re-add greeting message
-      const greetingMessage: ChatMessageType = {
-        _id: 'greeting',
-        conversationId: '',
-        userId: '',
-        role: 'assistant',
-        content: "Hi! I'm Avi, your AI marketing analyst. I can help you understand your marketing metrics, identify trends, and suggest optimization strategies. What would you like to know?",
-        timestamp: new Date().toISOString(),
-      };
-      setMessages([greetingMessage]);
+        // Clear all state
+        setMessages([]);
+        setConversationId(undefined);
+        setUsedPresetIds(new Set());
+        setError(null);
+
+        // Clear localStorage for used presets
+        try {
+          localStorage.removeItem(STORAGE_KEY_USED_PRESETS);
+        } catch (error) {
+          console.error('Error clearing localStorage:', error);
+        }
+
+        // Re-add greeting message
+        const greetingMessage: ChatMessageType = {
+          _id: 'greeting',
+          conversationId: '',
+          userId: '',
+          role: 'assistant',
+          content: `Hi! 👋 I'm **Avi**, your AI marketing analyst.
+
+I have access to all your marketing data and can help you with:
+
+📊 **Analytics & Performance**
+• Traffic analysis and user behavior
+• Conversion rates and revenue insights
+• Channel performance comparisons
+
+📈 **Marketing Insights**
+• Google Ads & Meta Ads performance
+• Social media engagement (Facebook, Instagram, LinkedIn)
+• SEO performance and search rankings
+
+💡 **Strategic Recommendations**
+• Optimization opportunities
+• Budget allocation suggestions
+• Trend identification and forecasting
+
+**What would you like to explore today?**`,
+          timestamp: new Date().toISOString(),
+        };
+        setMessages([greetingMessage]);
+      } catch (error) {
+        console.error('Error clearing chat:', error);
+      }
     }
   };
 

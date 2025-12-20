@@ -636,6 +636,22 @@ const ProjectInsightsSection = ({
             <FileText className="h-4 w-4" />
             <span>Forms</span>
           </NavLink>
+
+          {/* Revenue Opportunities */}
+          <NavLink
+            to={`/dashboard/${projectId}/revenue-opportunities`}
+            className={({ isActive }) =>
+              cn(
+                "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                isActive
+                  ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/25"
+                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+              )
+            }
+          >
+            <TrendingUp className="h-4 w-4" />
+            <span>Revenue Opportunities</span>
+          </NavLink>
         </nav>
       </div>
 

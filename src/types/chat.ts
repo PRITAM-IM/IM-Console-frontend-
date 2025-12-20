@@ -28,6 +28,7 @@ export interface SendMessageRequest {
     startDate: string;
     endDate: string;
   };
+  pageContext?: 'overview' | 'analytics' | 'youtube' | 'facebook' | 'instagram' | 'meta-ads' | 'google-ads' | 'search-console' | 'linkedin';
 }
 
 export interface SendMessageResponse {
