@@ -214,8 +214,15 @@ const RevenueOpportunitiesPage: React.FC = () => {
                                 <MapPin className="h-5 w-5 text-green-600" />
                             </div>
                             <div className="flex-1">
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center justify-between">
                                     <h3 className="font-semibold text-green-900">✓ Google Places Connected</h3>
+                                    <a
+                                        href={`/dashboard/${projectId}/places`}
+                                        className="text-sm text-green-700 hover:text-green-900 flex items-center gap-1 px-3 py-1 bg-green-100 hover:bg-green-200 rounded-md transition-colors"
+                                    >
+                                        <RefreshCw className="h-3 w-3" />
+                                        Change Hotel
+                                    </a>
                                 </div>
                                 <p className="text-sm text-green-800 mt-1 font-medium">
                                     {project.googlePlacesData.displayName || project.name}
