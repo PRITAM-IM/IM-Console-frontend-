@@ -16,7 +16,6 @@ import { Button } from "@/components/ui/button";
 import LoadingState from "@/components/common/LoadingState";
 import ErrorState from "@/components/common/ErrorState";
 import AIMasterButton from "@/components/common/AIMasterButton";
-import ReconnectButton from "@/components/common/ReconnectButton";
 import DisconnectButton from "@/components/common/DisconnectButton";
 import ConnectGooglePlaces from "@/components/projects/ConnectGooglePlaces";
 import api from "@/lib/api";
@@ -128,6 +127,7 @@ const GooglePlacesPage = () => {
   const [projectError, setProjectError] = useState<string | null>(null);
   const [dataError, setDataError] = useState<string | null>(null);
   const [showConnectModal, setShowConnectModal] = useState(false);
+  const [showReconnectModal, setShowReconnectModal] = useState(false);
 
   // Fetch project
   const fetchProject = useCallback(async () => {
@@ -182,6 +182,11 @@ const GooglePlacesPage = () => {
     void fetchProject();
   };
 
+  const handleReconnectSuccess = () => {
+    setShowReconnectModal(false);
+    void fetchProject();
+  };
+
   if (loadingProject) {
     return <LoadingState message="Loading project..." className="py-16" />;
   }
@@ -230,11 +235,14 @@ const GooglePlacesPage = () => {
         </div>
         <div className="flex items-center gap-2">
           <AIMasterButton />
-          <ReconnectButton
-            service="google-places"
-            projectId={projectId || ''}
-            onReconnectSuccess={fetchProject}
-          />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowReconnectModal(true)}
+          >
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Reconnect
+          </Button>
           <DisconnectButton
             service="google-places"
             projectId={projectId || ''}
@@ -270,8 +278,8 @@ const GooglePlacesPage = () => {
                 {currentData?.businessStatus && (
                   <span
                     className={`px-3 py-1 rounded-full text-sm font-medium ${currentData.businessStatus === "OPERATIONAL"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-yellow-100 text-yellow-700"
+                      ? "bg-green-100 text-green-700"
+                      : "bg-yellow-100 text-yellow-700"
                       }`}
                   >
                     {currentData.businessStatus}
@@ -464,6 +472,15 @@ const GooglePlacesPage = () => {
             </Card>
           )}
         </>
+      )}
+
+      {/* Reconnect Modal */}
+      {showReconnectModal && (
+        <ConnectGooglePlaces
+          projectId={projectId!}
+          onSuccess={handleReconnectSuccess}
+          onClose={() => setShowReconnectModal(false)}
+        />
       )}
     </div>
   );
