@@ -198,6 +198,7 @@ const RevenueOpportunitiesPage: React.FC = () => {
                                 ...opp, campaignImage: {
                                     url: response.data.data.imageUrl,
                                     prompt: response.data.data.prompt,
+                                    provider: response.data.data.provider || 'gemini',
                                     generatedAt: new Date().toISOString()
                                 }
                             }
@@ -753,8 +754,8 @@ const RevenueOpportunitiesPage: React.FC = () => {
                                                             className="w-full h-auto"
                                                         />
                                                         <div className={`absolute top-2 right-2 px-2 py-1 rounded-lg text-xs font-semibold shadow-lg ${opportunity.campaignImage.provider === 'gemini'
-                                                                ? 'bg-blue-500 text-white'
-                                                                : 'bg-green-500 text-white'
+                                                            ? 'bg-blue-500 text-white'
+                                                            : 'bg-green-500 text-white'
                                                             }`}>
                                                             ✓ {opportunity.campaignImage.provider === 'gemini' ? 'Gemini AI' : 'DALL-E 3'}
                                                         </div>
