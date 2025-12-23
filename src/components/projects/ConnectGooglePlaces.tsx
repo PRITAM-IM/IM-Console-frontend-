@@ -190,7 +190,7 @@ const ConnectGooglePlaces = ({ projectId, onSuccess, onClose }: ConnectGooglePla
             <div className="space-y-4">
               {error && <ErrorState description={error} />}
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Search Results</h3>
+                <h3 className="text-lg font-semibold text-slate-900">Search Results</h3>
                 <Button variant="outline" size="sm" onClick={() => setStep("search")}>
                   New Search
                 </Button>
@@ -249,7 +249,7 @@ const ConnectGooglePlaces = ({ projectId, onSuccess, onClose }: ConnectGooglePla
             <div className="space-y-4">
               {error && <ErrorState description={error} />}
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Confirm Hotel Details</h3>
+                <h3 className="text-lg font-semibold text-slate-900">Confirm Hotel Details</h3>
                 <Button variant="outline" size="sm" onClick={() => setStep("select")}>
                   Back to Results
                 </Button>
@@ -303,8 +303,8 @@ const ConnectGooglePlaces = ({ projectId, onSuccess, onClose }: ConnectGooglePla
                 </div>
 
                 {placeDetails.reviews && placeDetails.reviews.length > 0 && (
-                  <div className="pt-4 border-t">
-                    <h4 className="font-semibold mb-2">Recent Reviews</h4>
+                  <div className="pt-4 border-t border-slate-200">
+                    <h4 className="font-semibold text-slate-900 mb-2">Recent Reviews</h4>
                     <p className="text-sm text-slate-600">
                       {placeDetails.reviews.length} reviews will be imported
                     </p>
@@ -336,7 +336,7 @@ const ConnectGooglePlaces = ({ projectId, onSuccess, onClose }: ConnectGooglePla
               <div className="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-4">
                 <CheckCircle2 className="h-6 w-6 text-green-600" />
               </div>
-              <h3 className="text-lg font-semibold mb-2">Successfully Connected!</h3>
+              <h3 className="text-lg font-semibold text-slate-900 mb-2">Successfully Connected!</h3>
               <p className="text-sm text-slate-600">
                 Hotel data from Google Places has been imported
               </p>

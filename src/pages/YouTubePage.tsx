@@ -547,31 +547,33 @@ const YouTubePage = () => {
               </CardHeader>
               <CardContent>
                 {trafficPieData.length > 0 ? (
-                  <div className="flex items-center gap-6">
-                    <ResponsiveContainer width="50%" height={200}>
-                      <PieChart>
-                        <Pie
-                          data={trafficPieData}
-                          dataKey="value"
-                          nameKey="name"
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={50}
-                          outerRadius={80}
-                          label={({ percent }) => `${((percent ?? 0) * 100).toFixed(1)}%`}
-                          labelLine={false}
-                        >
-                          {trafficPieData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip
-                          contentStyle={{ backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '12px' }}
-                          formatter={(value: any) => [formatNumber(value), 'Views']}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                    <div className="flex-1 space-y-2">
+                  <div className="flex flex-col lg:flex-row items-center gap-6">
+                    <div className="w-full lg:w-1/2">
+                      <ResponsiveContainer width="100%" height={200}>
+                        <PieChart>
+                          <Pie
+                            data={trafficPieData}
+                            dataKey="value"
+                            nameKey="name"
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={50}
+                            outerRadius={80}
+                            label={({ percent }) => `${((percent ?? 0) * 100).toFixed(1)}%`}
+                            labelLine={false}
+                          >
+                            {trafficPieData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            contentStyle={{ backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '12px' }}
+                            formatter={(value: any) => [formatNumber(value), 'Views']}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div className="flex-1 w-full space-y-2">
                       {trafficSources.slice(0, 5).map((source) => {
                         const percentage = totalTrafficViews > 0 ? ((source.views / totalTrafficViews) * 100).toFixed(1) : '0';
                         const color = TRAFFIC_COLORS[source.trafficSource] || '#6B7280';

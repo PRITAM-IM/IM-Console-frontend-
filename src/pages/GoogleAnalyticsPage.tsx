@@ -56,31 +56,30 @@ const formatDuration = (seconds: number) => {
   // Convert from minutes to seconds if the value seems to be in minutes
   // GA4 API returns duration in seconds, but our backend might return it in minutes
   const actualSeconds = seconds < 10 ? seconds * 60 : seconds;
-  
+
   const mins = Math.floor(actualSeconds / 60);
   const secs = Math.floor(actualSeconds % 60);
-  
+
   if (mins === 0) {
     return `${secs}s`;
   }
-  
+
   return `${mins}m ${secs}s`;
 };
 
 const formatChange = (change: number | undefined) => {
   if (change === undefined || change === null) return null;
-  
+
   // Cap extreme values at ±999%
   const cappedChange = Math.max(-999, Math.min(999, change));
-  
+
   const isPositive = cappedChange > 0;
   const isNegative = cappedChange < 0;
   const displayValue = Math.abs(cappedChange).toFixed(1);
-  
+
   return (
-    <span className={`text-xs font-semibold ${
-      isPositive ? 'text-green-600' : isNegative ? 'text-red-600' : 'text-slate-500'
-    }`}>
+    <span className={`text-xs font-semibold ${isPositive ? 'text-green-600' : isNegative ? 'text-red-600' : 'text-slate-500'
+      }`}>
       {isPositive && '↑'}{isNegative && '↓'} {displayValue}%
     </span>
   );
@@ -137,7 +136,7 @@ const GoogleAnalyticsPage = () => {
   const [rangePreset, setRangePreset] = useState<DateRangePreset>("7d");
   const [customRange, setCustomRange] = useState<{ startDate?: string; endDate?: string }>({});
   const [activeRange, setActiveRange] = useState<DateRange>(() => buildDateRange("7d"));
-  
+
   // State for switchable metric card
   const [selectedAdditionalMetric, setSelectedAdditionalMetric] = useState<'conversions' | 'revenue' | 'engaged'>('conversions');
 
@@ -172,6 +171,8 @@ const GoogleAnalyticsPage = () => {
     if (!projectId) return;
     setLoadingAnalytics(true);
     setTokenExpired(false);
+
+    console.log('🔄 Fetching Analytics with params:', params);
 
     setChartErrors({
       overview: null,
@@ -340,7 +341,13 @@ const GoogleAnalyticsPage = () => {
   }
 
   const handleApplyRange = () => {
-    setActiveRange(buildDateRange(rangePreset, customRange));
+    const newRange = buildDateRange(rangePreset, customRange);
+    console.log('📅 Date Filter Applied:', {
+      preset: rangePreset,
+      customRange,
+      calculatedRange: newRange
+    });
+    setActiveRange(newRange);
   };
 
   const handleRefresh = () => {
@@ -449,19 +456,18 @@ const GoogleAnalyticsPage = () => {
             <RefreshCw className={`h-4 w-4 mr-2 ${loadingAnalytics ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
+          <DateRangeSelector
+            preset={rangePreset}
+            onPresetChange={setRangePreset}
+            customRange={customRange}
+            onCustomChange={(field, value) =>
+              setCustomRange((prev) => ({ ...prev, [field]: value }))
+            }
+            onApply={handleApplyRange}
+            disabled={loadingAnalytics}
+          />
         </div>
       </div>
-
-      <DateRangeSelector
-        preset={rangePreset}
-        onPresetChange={setRangePreset}
-        customRange={customRange}
-        onCustomChange={(field, value) =>
-          setCustomRange((prev) => ({ ...prev, [field]: value }))
-        }
-        onApply={handleApplyRange}
-        disabled={loadingAnalytics}
-      />
 
       {/* Overview Cards */}
       {loadingAnalytics && !overview ? (
@@ -646,7 +652,7 @@ const GoogleAnalyticsPage = () => {
                     <option value="engaged">Engaged Sessions</option>
                   </select>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   {selectedAdditionalMetric === 'conversions' && (
                     <>
@@ -666,7 +672,7 @@ const GoogleAnalyticsPage = () => {
                       </div>
                     </>
                   )}
-                  
+
                   {selectedAdditionalMetric === 'revenue' && (
                     <>
                       <div>
@@ -685,7 +691,7 @@ const GoogleAnalyticsPage = () => {
                       </div>
                     </>
                   )}
-                  
+
                   {selectedAdditionalMetric === 'engaged' && (
                     <>
                       <div>

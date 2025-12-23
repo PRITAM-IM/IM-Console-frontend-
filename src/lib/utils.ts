@@ -76,6 +76,14 @@ export function buildDateRange(
       // Last 28 complete days: yesterday minus 27 days
       startDate = subDays(endDate, 27);
       break;
+    case "last90days":
+      // Last 90 complete days (3 months): yesterday minus 89 days
+      startDate = subDays(endDate, 89);
+      break;
+    case "last180days":
+      // Last 180 complete days (6 months): yesterday minus 179 days
+      startDate = subDays(endDate, 179);
+      break;
     case "custom":
       // Default to last 7 days if custom but no dates provided
       startDate = subDays(endDate, 6);

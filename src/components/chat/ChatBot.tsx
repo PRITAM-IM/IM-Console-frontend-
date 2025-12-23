@@ -286,7 +286,7 @@ I have access to all your marketing data and can help you with:
 
   return (
     <div className="flex flex-col h-full bg-white rounded-lg shadow-xl overflow-hidden">
-      <ChatHeader onClose={onClose} onClearChat={handleClearChat} />
+      <ChatHeader onClose={onClose} onClearChat={handleClearChat} conversationId={conversationId} />
 
       {/* Messages Container */}
       <div

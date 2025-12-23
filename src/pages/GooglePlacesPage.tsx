@@ -30,23 +30,38 @@ const PhotoCard = ({ photo, index }: PhotoCardProps) => {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string>('');
 
   useEffect(() => {
     const fetchPhoto = async () => {
       try {
         setLoading(true);
         setError(false);
+        setErrorMessage('');
+
         // Encode the photo name for URL
         const encodedPhotoName = encodeURIComponent(photo.name);
+        console.log(`[PhotoCard] Fetching photo ${index + 1}:`, photo.name);
+
         const { data } = await api.get(`/google-places/photo/${encodedPhotoName}?maxWidth=800`);
+
         if (data.success && data.data.photoDataUrl) {
           setPhotoUrl(data.data.photoDataUrl);
+          console.log(`[PhotoCard] Successfully loaded photo ${index + 1}`);
         } else {
+          console.error(`[PhotoCard] Photo ${index + 1} failed: No data URL in response`);
           setError(true);
+          setErrorMessage('No image data');
         }
-      } catch (err) {
-        console.error('Failed to load photo:', err);
+      } catch (err: any) {
+        console.error(`[PhotoCard] Failed to load photo ${index + 1}:`, err);
+        console.error(`[PhotoCard] Error details:`, {
+          message: err.message,
+          response: err.response?.data,
+          status: err.response?.status,
+        });
         setError(true);
+        setErrorMessage(err.response?.data?.error || err.message || 'Failed to load');
       } finally {
         setLoading(false);
       }
@@ -54,8 +69,13 @@ const PhotoCard = ({ photo, index }: PhotoCardProps) => {
 
     if (photo?.name) {
       void fetchPhoto();
+    } else {
+      console.error('[PhotoCard] No photo name provided:', photo);
+      setError(true);
+      setErrorMessage('Invalid photo');
+      setLoading(false);
     }
-  }, [photo]);
+  }, [photo, index]);
 
   return (
     <div className="relative aspect-square rounded-lg overflow-hidden bg-slate-100 group">
@@ -65,8 +85,9 @@ const PhotoCard = ({ photo, index }: PhotoCardProps) => {
         </div>
       )}
       {error && (
-        <div className="absolute inset-0 flex items-center justify-center text-slate-400 text-sm">
-          No Image
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 text-xs p-2 text-center">
+          <div className="text-sm mb-1">No Image</div>
+          {errorMessage && <div className="text-xs opacity-70">{errorMessage}</div>}
         </div>
       )}
       {photoUrl && !error && (
@@ -393,13 +414,13 @@ const GooglePlacesPage = () => {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {currentData.photos.slice(0, 8).map((photo: any, index: number) => (
+                  {currentData.photos.slice(0, 12).map((photo: any, index: number) => (
                     <PhotoCard key={index} photo={photo} index={index} />
                   ))}
                 </div>
-                {currentData.photos.length > 8 && (
+                {currentData.photos.length > 12 && (
                   <p className="text-sm text-slate-600 text-center mt-4">
-                    +{currentData.photos.length - 8} more photos available
+                    +{currentData.photos.length - 12} more photos available
                   </p>
                 )}
               </CardContent>

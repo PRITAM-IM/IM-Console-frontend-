@@ -355,6 +355,14 @@ const GoogleSheetsPage = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowConnectModal(true)}
+              className="border-slate-300 hover:border-green-500 hover:bg-green-50 hover:text-green-700 transition-all font-semibold"
+            >
+              Change Spreadsheet
+            </Button>
             <ReconnectButton
               service="google-sheets"
               projectId={projectId || ''}
@@ -425,23 +433,23 @@ const GoogleSheetsPage = () => {
                           key={sheet.sheetId}
                           onClick={() => handleSheetSelect(sheet)}
                           className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all mb-1 ${selectedSheet?.sheetId === sheet.sheetId
-                              ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 shadow-sm'
-                              : 'hover:bg-slate-50 border-2 border-transparent'
+                            ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 shadow-sm'
+                            : 'hover:bg-slate-50 border-2 border-transparent'
                             }`}
                         >
                           <div className={`p-2 rounded-lg shadow-sm ${selectedSheet?.sheetId === sheet.sheetId
-                              ? 'bg-gradient-to-br from-green-500 to-emerald-600'
-                              : 'bg-slate-100'
+                            ? 'bg-gradient-to-br from-green-500 to-emerald-600'
+                            : 'bg-slate-100'
                             }`}>
                             <Table className={`h-4 w-4 ${selectedSheet?.sheetId === sheet.sheetId
-                                ? 'text-white'
-                                : 'text-slate-500'
+                              ? 'text-white'
+                              : 'text-slate-500'
                               }`} />
                           </div>
                           <div className="flex-1 text-left">
                             <p className={`font-semibold ${selectedSheet?.sheetId === sheet.sheetId
-                                ? 'text-green-900'
-                                : 'text-slate-900'
+                              ? 'text-green-900'
+                              : 'text-slate-900'
                               }`}>{sheet.title}</p>
                             <p className="text-xs text-slate-500 font-medium">
                               {sheet.rowCount.toLocaleString()} rows × {sheet.columnCount} cols
@@ -609,31 +617,6 @@ const GoogleSheetsPage = () => {
           </CardContent>
         </Card>
       )}
-
-      {/* Enhanced Spreadsheet Info Footer */}
-      <Card className="bg-gradient-to-br from-slate-50 to-white border-slate-200/60 shadow-sm">
-        <CardContent className="py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-slate-100 rounded-lg">
-                <Database className="h-4 w-4 text-slate-600" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Spreadsheet ID</p>
-                <p className="font-mono text-sm text-slate-800 font-semibold">{project.googleSheetId}</p>
-              </div>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowConnectModal(true)}
-              className="border-2 border-slate-300 hover:border-green-500 hover:bg-green-50 hover:text-green-700 transition-all font-semibold"
-            >
-              Change Spreadsheet
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
 
       {showConnectModal && (
         <ConnectGoogleSheets

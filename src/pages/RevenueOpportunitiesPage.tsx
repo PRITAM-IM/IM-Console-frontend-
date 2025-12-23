@@ -6,7 +6,7 @@ import {
     MapPin,
     TrendingUp,
     Users,
-    DollarSign,
+    IndianRupee,
     RefreshCw,
     Sparkles,
     AlertCircle,
@@ -14,6 +14,7 @@ import {
     Clock,
     Target,
     Lightbulb,
+    Image,
 } from 'lucide-react';
 
 interface RevenueOpportunity {
@@ -39,6 +40,12 @@ interface RevenueOpportunity {
         pricingStrategy: string;
     };
     source: string;
+    campaignImage?: {
+        url: string;
+        prompt: string;
+        provider?: 'gemini' | 'dalle';
+        generatedAt: string;
+    };
 }
 
 const RevenueOpportunitiesPage: React.FC = () => {
@@ -48,6 +55,7 @@ const RevenueOpportunitiesPage: React.FC = () => {
     const [discovering, setDiscovering] = useState(false);
     const [selectedOpportunity, setSelectedOpportunity] = useState<RevenueOpportunity | null>(null);
     const [timeframe, setTimeframe] = useState<'next30days' | 'next90days' | 'upcoming'>('next90days');
+    const [generatingImage, setGeneratingImage] = useState<string | null>(null); // Track which opportunity is generating image
     const [stats, setStats] = useState({
         total: 0,
         highOpportunity: 0,
@@ -94,6 +102,20 @@ const RevenueOpportunitiesPage: React.FC = () => {
             if (response.data.success) {
                 setOpportunities(response.data.data);
                 setStats(response.data.stats);
+
+                // Check if opportunities exist but hotel has changed
+                if (response.data.data.length > 0 && project?.googlePlacesData) {
+                    const firstOpp = response.data.data[0];
+                    const currentHotelCity = project.googlePlacesData.formattedAddress || '';
+                    const oppCity = firstOpp.location?.city || '';
+
+                    // Log for debugging
+                    console.log('🔍 Checking data freshness:', {
+                        currentHotel: project.googlePlacesData.displayName,
+                        currentCity: currentHotelCity,
+                        opportunityCity: oppCity
+                    });
+                }
             }
         } catch (error) {
             console.error('Error fetching opportunities:', error);
@@ -159,6 +181,38 @@ const RevenueOpportunitiesPage: React.FC = () => {
     const getDaysUntil = (dateString: string) => {
         const days = Math.floor((new Date(dateString).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
         return days;
+    };
+
+    const generateCampaignImage = async (opportunity: RevenueOpportunity) => {
+        try {
+            setGeneratingImage(opportunity._id);
+
+            const response = await api.post(`/revenue-opportunities/${opportunity._id}/generate-image`);
+
+            if (response.data.success) {
+                // Update the opportunity in the list with the new image
+                setOpportunities(prev =>
+                    prev.map(opp =>
+                        opp._id === opportunity._id
+                            ? {
+                                ...opp, campaignImage: {
+                                    url: response.data.data.imageUrl,
+                                    prompt: response.data.data.prompt,
+                                    generatedAt: new Date().toISOString()
+                                }
+                            }
+                            : opp
+                    )
+                );
+
+                alert('✅ Marketing post generated successfully!');
+            }
+        } catch (error: any) {
+            console.error('Error generating campaign image:', error);
+            alert(error.response?.data?.message || 'Failed to generate marketing post');
+        } finally {
+            setGeneratingImage(null);
+        }
     };
 
     return (
@@ -345,7 +399,7 @@ const RevenueOpportunitiesPage: React.FC = () => {
                             <div className="relative">
                                 <div className="flex items-center justify-between mb-2">
                                     <div className="p-2 bg-purple-100 rounded-lg">
-                                        <DollarSign className="h-4 w-4 text-purple-600" />
+                                        <IndianRupee className="h-4 w-4 text-purple-600" />
                                     </div>
                                 </div>
                                 <p className="text-3xl font-bold text-purple-600">{stats.totalEstimatedRoomDemand}</p>
@@ -385,6 +439,60 @@ const RevenueOpportunitiesPage: React.FC = () => {
                         </button>
                     </div>
                 </div>
+
+                {/* Stale Data Warning */}
+                {!loading && opportunities.length > 0 && project?.googlePlacesData && (
+                    (() => {
+                        const firstOpp = opportunities[0];
+                        const currentHotelName = project.googlePlacesData.displayName || project.name;
+                        const currentLocation = project.googlePlacesData.formattedAddress || '';
+                        const oppLocation = firstOpp.location?.city || '';
+
+                        // Check if locations don't match (simple check)
+                        const isDifferentLocation = currentLocation && oppLocation &&
+                            !currentLocation.toLowerCase().includes(oppLocation.toLowerCase());
+
+                        if (isDifferentLocation) {
+                            return (
+                                <div className="mb-6 relative overflow-hidden bg-gradient-to-r from-orange-50 to-red-50 border-2 border-orange-300 rounded-2xl p-6 shadow-lg">
+                                    <div className="flex items-start gap-4">
+                                        <div className="flex-shrink-0 p-3 bg-orange-500 rounded-xl shadow-lg">
+                                            <AlertCircle className="h-6 w-6 text-white" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <h3 className="font-bold text-orange-900 text-lg mb-2">
+                                                ⚠️ Outdated Event Data Detected
+                                            </h3>
+                                            <p className="text-orange-800 mb-3">
+                                                The events shown below are for a <strong>different hotel location</strong>.
+                                                Your current hotel is <strong>{currentHotelName}</strong> but these events
+                                                are for <strong>{oppLocation}</strong>.
+                                            </p>
+                                            <button
+                                                onClick={discoverNewOpportunities}
+                                                disabled={discovering}
+                                                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl hover:shadow-xl hover:shadow-orange-500/25 transition-all duration-200 font-semibold"
+                                            >
+                                                {discovering ? (
+                                                    <>
+                                                        <RefreshCw className="h-5 w-5 animate-spin" />
+                                                        Discovering New Events...
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Sparkles className="h-5 w-5" />
+                                                        Discover Events for Current Hotel
+                                                    </>
+                                                )}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        }
+                        return null;
+                    })()
+                )}
 
                 {/* Opportunities List */}
                 {loading ? (
@@ -505,7 +613,7 @@ const RevenueOpportunitiesPage: React.FC = () => {
                                                         {/* Est. Room Demand */}
                                                         <div className="flex items-center gap-3 p-3 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl border border-purple-100">
                                                             <div className="p-2 bg-purple-100 rounded-lg">
-                                                                <DollarSign className="h-4 w-4 text-purple-600" />
+                                                                <IndianRupee className="h-4 w-4 text-purple-600" />
                                                             </div>
                                                             <div>
                                                                 <p className="text-xs text-purple-600 font-medium">Est. Room Demand</p>
@@ -588,7 +696,7 @@ const RevenueOpportunitiesPage: React.FC = () => {
                                                         <div className="p-4 bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl border border-emerald-100">
                                                             <div className="flex items-center gap-2 mb-2">
                                                                 <div className="p-1.5 bg-emerald-100 rounded-lg">
-                                                                    <DollarSign className="h-4 w-4 text-emerald-600" />
+                                                                    <IndianRupee className="h-4 w-4 text-emerald-600" />
                                                                 </div>
                                                                 <h4 className="font-semibold text-emerald-900 text-sm">Pricing Strategy</h4>
                                                             </div>
@@ -618,6 +726,67 @@ const RevenueOpportunitiesPage: React.FC = () => {
                                                 )}
                                             </div>
                                         )}
+
+                                        {/* Marketing Post Generation Section */}
+                                        <div className="mt-4 pt-4 border-t border-slate-100">
+                                            {opportunity.campaignImage ? (
+                                                // Show generated image
+                                                <div className="space-y-3">
+                                                    <div className="flex items-center justify-between">
+                                                        <h4 className="font-semibold text-slate-900 flex items-center gap-2">
+                                                            <Image className="h-4 w-4 text-green-600" />
+                                                            Marketing Post Generated
+                                                        </h4>
+                                                        <a
+                                                            href={opportunity.campaignImage.url}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                                                        >
+                                                            Open Full Size →
+                                                        </a>
+                                                    </div>
+                                                    <div className="relative rounded-xl overflow-hidden border-2 border-green-200 shadow-lg">
+                                                        <img
+                                                            src={opportunity.campaignImage.url}
+                                                            alt={`Marketing post for ${opportunity.eventName}`}
+                                                            className="w-full h-auto"
+                                                        />
+                                                        <div className={`absolute top-2 right-2 px-2 py-1 rounded-lg text-xs font-semibold shadow-lg ${opportunity.campaignImage.provider === 'gemini'
+                                                                ? 'bg-blue-500 text-white'
+                                                                : 'bg-green-500 text-white'
+                                                            }`}>
+                                                            ✓ {opportunity.campaignImage.provider === 'gemini' ? 'Gemini AI' : 'DALL-E 3'}
+                                                        </div>
+                                                    </div>
+                                                    <p className="text-xs text-slate-500 italic">
+                                                        Generated on {new Date(opportunity.campaignImage.generatedAt).toLocaleDateString('en-IN')}
+                                                        {opportunity.campaignImage.provider && (
+                                                            <span className="ml-2">• Powered by {opportunity.campaignImage.provider === 'gemini' ? 'Google Gemini' : 'OpenAI DALL-E 3'}</span>
+                                                        )}
+                                                    </p>
+                                                </div>
+                                            ) : (
+                                                // Show generate button
+                                                <button
+                                                    onClick={() => generateCampaignImage(opportunity)}
+                                                    disabled={generatingImage === opportunity._id}
+                                                    className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 text-white rounded-xl hover:shadow-xl hover:shadow-purple-500/25 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed font-semibold"
+                                                >
+                                                    {generatingImage === opportunity._id ? (
+                                                        <>
+                                                            <RefreshCw className="h-5 w-5 animate-spin" />
+                                                            Generating Marketing Post...
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Image className="h-5 w-5" />
+                                                            Generate Marketing Post with AI
+                                                        </>
+                                                    )}
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             );

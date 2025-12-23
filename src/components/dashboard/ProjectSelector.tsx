@@ -585,13 +585,6 @@ const ProjectInsightsSection = ({
           icon: MapPin,
           onConnect: onConnectGooglePlaces
         },
-        {
-          label: "TA Reviews",
-          connected: false, // TODO: Add TripAdvisor connection support
-          route: `/dashboard/${projectId}/ta-reviews`,
-          icon: Globe,
-          onConnect: () => { } // TODO: Add TripAdvisor connect handler
-        },
       ]
     },
   ];

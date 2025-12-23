@@ -29,8 +29,15 @@ const NewProjectPage = () => {
   const onSubmit = async (values: ProjectForm) => {
     try {
       setServerError(null);
-      await api.post("/projects", values);
-      navigate("/dashboard");
+      const response = await api.post("/projects", values);
+      // Navigate to the newly created project
+      const newProject = response.data.data || response.data;
+      const projectId = newProject.id || newProject._id;
+      if (projectId) {
+        navigate(`/dashboard/${projectId}`);
+      } else {
+        navigate("/dashboard");
+      }
     } catch (error) {
       setServerError(
         error instanceof Error ? error.message : "Unable to create project."

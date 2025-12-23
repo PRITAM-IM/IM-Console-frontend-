@@ -49,7 +49,7 @@ const GoogleDrivePage = () => {
   const [showConnectModal, setShowConnectModal] = useState(false);
   const [driveStats, setDriveStats] = useState<GoogleDriveStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(false);
-  
+
   // Folder navigation state
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [currentFolders, setCurrentFolders] = useState<DriveFolder[]>([]);
@@ -99,24 +99,24 @@ const GoogleDrivePage = () => {
       setBreadcrumbs([{ id: project.googleDriveFolderId, name: "Root" }]);
     }
   }, [fetchDriveStats, project?.googleDriveFolderId]);
-  
+
   // Fetch folder contents when currentFolderId changes
   useEffect(() => {
     if (currentFolderId && projectId) {
       void fetchFolderContents(currentFolderId);
     }
   }, [currentFolderId, projectId]);
-  
+
   const fetchFolderContents = async (folderId: string) => {
     if (!projectId) return;
-    
+
     try {
       setLoadingContents(true);
-      const response = await api.get<{ 
-        success: boolean; 
-        data: { folders: DriveFolder[]; files: GoogleDriveFile[] } 
+      const response = await api.get<{
+        success: boolean;
+        data: { folders: DriveFolder[]; files: GoogleDriveFile[] }
       }>(`/google-drive/${projectId}/folder/${folderId}/contents`);
-      
+
       setCurrentFolders(response.data.data.folders);
       setCurrentFiles(response.data.data.files);
     } catch (error) {
@@ -127,18 +127,18 @@ const GoogleDrivePage = () => {
       setLoadingContents(false);
     }
   };
-  
+
   const navigateToFolder = (folder: DriveFolder) => {
     setCurrentFolderId(folder.id);
     setBreadcrumbs([...breadcrumbs, { id: folder.id, name: folder.name }]);
   };
-  
+
   const navigateToBreadcrumb = (index: number) => {
     const newBreadcrumbs = breadcrumbs.slice(0, index + 1);
     setBreadcrumbs(newBreadcrumbs);
     setCurrentFolderId(newBreadcrumbs[newBreadcrumbs.length - 1].id);
   };
-  
+
   const navigateBack = () => {
     if (breadcrumbs.length > 1) {
       const newBreadcrumbs = breadcrumbs.slice(0, -1);
@@ -222,6 +222,14 @@ const GoogleDrivePage = () => {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowConnectModal(true)}
+            className="border-slate-300 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-700 transition-all font-semibold"
+          >
+            Change Folder
+          </Button>
           <ReconnectButton
             service="google-drive"
             projectId={projectId || ''}
@@ -301,7 +309,7 @@ const GoogleDrivePage = () => {
                 )}
               </div>
             </CardHeader>
-            
+
             {/* Breadcrumbs */}
             {breadcrumbs.length > 0 && (
               <div className="px-6 py-3 border-b border-slate-100 bg-slate-50">
@@ -321,11 +329,10 @@ const GoogleDrivePage = () => {
                           <ChevronRight className="h-4 w-4 text-slate-400" />
                           <button
                             onClick={() => navigateToBreadcrumb(index)}
-                            className={`${
-                              index === breadcrumbs.length - 1
-                                ? "text-slate-900 font-medium"
-                                : "text-blue-600 hover:text-blue-700"
-                            }`}
+                            className={`${index === breadcrumbs.length - 1
+                              ? "text-slate-900 font-medium"
+                              : "text-blue-600 hover:text-blue-700"
+                              }`}
                           >
                             {crumb.name}
                           </button>
@@ -336,7 +343,7 @@ const GoogleDrivePage = () => {
                 </div>
               </div>
             )}
-            
+
             <CardContent className="pt-6">
               {loadingContents ? (
                 <div className="py-12">
@@ -372,7 +379,7 @@ const GoogleDrivePage = () => {
                       </div>
                     </div>
                   )}
-                  
+
                   {/* Files */}
                   {currentFiles.length > 0 && (
                     <div>
@@ -418,7 +425,7 @@ const GoogleDrivePage = () => {
                       </div>
                     </div>
                   )}
-                  
+
                   {/* Empty State */}
                   {currentFolders.length === 0 && currentFiles.length === 0 && (
                     <div className="py-12 text-center">
@@ -431,21 +438,6 @@ const GoogleDrivePage = () => {
                   )}
                 </div>
               )}
-            </CardContent>
-          </Card>
-
-          {/* Folder ID */}
-          <Card className="bg-white">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-slate-500">Connected Folder ID</p>
-                  <p className="font-mono text-sm text-slate-900">{project.googleDriveFolderId}</p>
-                </div>
-                <Button variant="outline" size="sm" onClick={() => setShowConnectModal(true)}>
-                  Change Folder
-                </Button>
-              </div>
             </CardContent>
           </Card>
         </div>

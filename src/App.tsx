@@ -24,6 +24,7 @@ import GoogleDriveCallbackPage from "@/pages/GoogleDriveCallbackPage";
 import GoogleBusinessProfileCallbackPage from "@/pages/GoogleBusinessProfileCallbackPage";
 import LinkedInCallbackPage from "@/pages/LinkedInCallbackPage";
 import NewProjectPage from "@/pages/NewProjectPage";
+import EditProjectPage from "@/pages/EditProjectPage";
 import DashboardOverviewPage from "@/pages/DashboardOverviewPage";
 import GoogleAnalyticsPage from "@/pages/GoogleAnalyticsPage";
 import GoogleAdsPage from "@/pages/GoogleAdsPage";
@@ -40,6 +41,7 @@ import TemplatesPage from "@/pages/TemplatesPage";
 import TemplateBuilderPage from "@/pages/TemplateBuilderPage";
 import AIMasterPage from "@/pages/AIMasterPage";
 import RevenueOpportunitiesPage from "@/pages/RevenueOpportunitiesPage";
+import AllProjectsPage from "@/pages/AllProjectsPage";
 import DashboardIndex from "@/pages/DashboardIndex";
 import NotFoundPage from "@/pages/NotFoundPage";
 import LoadingState from "@/components/common/LoadingState";
@@ -78,6 +80,8 @@ const App = () => (
         <Route element={<ProtectedRoute />}>
           <Route element={<AppLayout />}>
             <Route path="/projects/new" element={<NewProjectPage />} />
+            <Route path="/projects/edit/:projectId" element={<EditProjectPage />} />
+            <Route path="/projects/all" element={<AllProjectsPage />} />
           </Route>
 
           {/* Full Screen Layout for Template Pages */}
