@@ -579,7 +579,7 @@ const ProjectInsightsSection = ({
       setExpanded: setReviewsExpanded,
       services: [
         {
-          label: "Google Places",
+          label: "Location",
           connected: !!project?.googlePlacesId,
           route: `/dashboard/${projectId}/places`,
           icon: MapPin,
@@ -754,7 +754,7 @@ const CollapsedProjectNav = ({ projectId, project }: CollapsedProjectNavProps) =
     { label: "Google Ads", connected: !!project?.googleAdsCustomerId, route: `/dashboard/${projectId}/ads`, icon: TrendingUp },
     { label: "Hotel CRM", connected: !!project?.googleSheetId, route: `/dashboard/${projectId}/sheets`, icon: FileSpreadsheet },
     { label: "Client Data", connected: !!project?.googleDriveFolderId, route: `/dashboard/${projectId}/drive`, icon: HardDrive },
-    { label: "Google Places", connected: !!project?.googlePlacesId, route: `/dashboard/${projectId}/places`, icon: MapPin },
+    { label: "Location", connected: !!project?.googlePlacesId, route: `/dashboard/${projectId}/places`, icon: MapPin },
   ];
 
   const connectedServices = connections.filter((conn) => conn.connected);

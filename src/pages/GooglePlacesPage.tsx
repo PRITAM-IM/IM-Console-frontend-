@@ -251,8 +251,8 @@ const GooglePlacesPage = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Google Places</h1>
-          <p className="text-slate-600 mt-1">Hotel information from Google Places API</p>
+          <h1 className="text-3xl font-bold text-slate-900">Location</h1>
+          <p className="text-slate-600 mt-1">Hotel Information</p>
         </div>
         <div className="flex items-center gap-2">
           <AIMasterButton />

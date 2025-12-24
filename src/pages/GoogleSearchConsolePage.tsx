@@ -190,8 +190,9 @@ const GoogleSearchConsolePage = () => {
     void fetchSearchConsoleData();
   }, [fetchSearchConsoleData]);
 
-  const handleApplyRange = () => {
-    const newRange = buildDateRange(rangePreset, customRange);
+  const handleApplyRange = (newPreset: DateRangePreset, newCustomRange: { startDate?: string; endDate?: string }) => {
+    // Use fresh values passed from DateRangeSelector instead of relying on state
+    const newRange = buildDateRange(newPreset, newCustomRange);
     setDateRange(newRange);
   };
 
@@ -542,12 +543,12 @@ const GoogleSearchConsolePage = () => {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <span className={`inline-flex items-center justify-center w-10 h-7 rounded-full text-sm font-bold ${(Number(query.position) || 0) <= 3
-                            ? 'bg-emerald-100 text-emerald-700'
-                            : (Number(query.position) || 0) <= 10
-                              ? 'bg-cyan-100 text-cyan-700'
-                              : (Number(query.position) || 0) <= 20
-                                ? 'bg-amber-100 text-amber-700'
-                                : 'bg-slate-100 text-slate-600'
+                          ? 'bg-emerald-100 text-emerald-700'
+                          : (Number(query.position) || 0) <= 10
+                            ? 'bg-cyan-100 text-cyan-700'
+                            : (Number(query.position) || 0) <= 20
+                              ? 'bg-amber-100 text-amber-700'
+                              : 'bg-slate-100 text-slate-600'
                           }`}>
                           {safeToFixed(query.position, 1)}
                         </span>
@@ -625,12 +626,12 @@ const GoogleSearchConsolePage = () => {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <span className={`inline-flex items-center justify-center w-10 h-7 rounded-full text-sm font-bold ${(Number(page.position) || 0) <= 3
-                            ? 'bg-emerald-100 text-emerald-700'
-                            : (Number(page.position) || 0) <= 10
-                              ? 'bg-cyan-100 text-cyan-700'
-                              : (Number(page.position) || 0) <= 20
-                                ? 'bg-amber-100 text-amber-700'
-                                : 'bg-slate-100 text-slate-600'
+                          ? 'bg-emerald-100 text-emerald-700'
+                          : (Number(page.position) || 0) <= 10
+                            ? 'bg-cyan-100 text-cyan-700'
+                            : (Number(page.position) || 0) <= 20
+                              ? 'bg-amber-100 text-amber-700'
+                              : 'bg-slate-100 text-slate-600'
                           }`}>
                           {safeToFixed(page.position, 1)}
                         </span>

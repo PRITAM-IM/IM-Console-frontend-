@@ -15,6 +15,7 @@ import {
     Target,
     Lightbulb,
     Image,
+    Download,
 } from 'lucide-react';
 
 interface RevenueOpportunity {
@@ -738,14 +739,38 @@ const RevenueOpportunitiesPage: React.FC = () => {
                                                             <Image className="h-4 w-4 text-green-600" />
                                                             Marketing Post Generated
                                                         </h4>
-                                                        <a
-                                                            href={opportunity.campaignImage.url}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="text-xs text-blue-600 hover:text-blue-700 font-medium"
-                                                        >
-                                                            Open Full Size →
-                                                        </a>
+                                                        <div className="flex items-center gap-2">
+                                                            <button
+                                                                onClick={async () => {
+                                                                    try {
+                                                                        const response = await fetch(opportunity.campaignImage!.url);
+                                                                        const blob = await response.blob();
+                                                                        const url = window.URL.createObjectURL(blob);
+                                                                        const a = document.createElement('a');
+                                                                        a.href = url;
+                                                                        a.download = `${opportunity.eventName.replace(/[^a-z0-9]/gi, '_')}_marketing_post.jpg`;
+                                                                        document.body.appendChild(a);
+                                                                        a.click();
+                                                                        window.URL.revokeObjectURL(url);
+                                                                        document.body.removeChild(a);
+                                                                    } catch (error) {
+                                                                        console.error('Download failed:', error);
+                                                                    }
+                                                                }}
+                                                                className="text-xs text-green-600 hover:text-green-700 font-medium flex items-center gap-1"
+                                                            >
+                                                                <Download className="h-3 w-3" />
+                                                                Download
+                                                            </button>
+                                                            <a
+                                                                href={opportunity.campaignImage.url}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                                                            >
+                                                                Open Full Size →
+                                                            </a>
+                                                        </div>
                                                     </div>
                                                     <div className="relative rounded-xl overflow-hidden border-2 border-green-200 shadow-lg">
                                                         <img

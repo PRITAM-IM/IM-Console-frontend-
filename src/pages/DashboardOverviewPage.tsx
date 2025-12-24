@@ -940,7 +940,7 @@ const DashboardOverviewPage = () => {
                 { name: "Instagram", connected: hasInstagram, path: "instagram", color: "pink" },
                 { name: "YouTube", connected: hasYouTube, path: "youtube", color: "red" },
                 { name: "LinkedIn", connected: hasLinkedIn, path: "linkedin", color: "sky" },
-                { name: "Google Places", connected: hasGooglePlaces, path: "places", color: "amber" },
+                { name: "Location", connected: hasGooglePlaces, path: "places", color: "amber" },
               ].map((platform) => (
                 <button
                   key={platform.name}

@@ -340,11 +340,12 @@ const GoogleAnalyticsPage = () => {
     );
   }
 
-  const handleApplyRange = () => {
-    const newRange = buildDateRange(rangePreset, customRange);
+  const handleApplyRange = (newPreset: DateRangePreset, newCustomRange: { startDate?: string; endDate?: string }) => {
+    // Use the fresh values passed from DateRangeSelector instead of relying on state
+    const newRange = buildDateRange(newPreset, newCustomRange);
     console.log('📅 Date Filter Applied:', {
-      preset: rangePreset,
-      customRange,
+      preset: newPreset,
+      customRange: newCustomRange,
       calculatedRange: newRange
     });
     setActiveRange(newRange);

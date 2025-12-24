@@ -12,7 +12,7 @@ interface FullControlProps {
   onPresetChange: (value: DateRangePreset) => void;
   customRange: { startDate?: string; endDate?: string };
   onCustomChange: (field: "startDate" | "endDate", value: string) => void;
-  onApply: () => void;
+  onApply: (preset: DateRangePreset, customRange: { startDate?: string; endDate?: string }) => void;
   disabled?: boolean;
   onDateRangeChange?: never;
 }
@@ -168,15 +168,23 @@ const DateRangeSelector = (props: DateRangeSelectorProps) => {
   const handleApply = () => {
     if (tempPreset === "custom") {
       if (tempStartDate && tempEndDate) {
-        onCustomChange("startDate", format(tempStartDate, "yyyy-MM-dd"));
-        onCustomChange("endDate", format(tempEndDate, "yyyy-MM-dd"));
+        const newCustomRange = {
+          startDate: format(tempStartDate, "yyyy-MM-dd"),
+          endDate: format(tempEndDate, "yyyy-MM-dd")
+        };
+        onCustomChange("startDate", newCustomRange.startDate);
+        onCustomChange("endDate", newCustomRange.endDate);
         onPresetChange("custom");
-        onApply();
+        onApply("custom", newCustomRange);
         setIsOpen(false);
       }
     } else {
+      // Clear custom range when using a preset
+      const emptyRange = { startDate: "", endDate: "" };
+      onCustomChange("startDate", "");
+      onCustomChange("endDate", "");
       onPresetChange(tempPreset);
-      onApply();
+      onApply(tempPreset, emptyRange);
       setIsOpen(false);
     }
   };
@@ -254,12 +262,12 @@ const DateRangeSelector = (props: DateRangeSelectorProps) => {
               onClick={() => handleDateClick(date)}
               disabled={tempPreset !== "custom"}
               className={`w-8 h-8 text-xs font-medium rounded transition-all flex items-center justify-center ${isSelected
-                  ? 'bg-purple-600 text-white font-bold'
-                  : isInRange
-                    ? 'bg-purple-100 text-purple-900'
-                    : isToday
-                      ? 'border-2 border-purple-600 text-slate-900 font-semibold'
-                      : 'text-slate-700 hover:bg-slate-100'
+                ? 'bg-purple-600 text-white font-bold'
+                : isInRange
+                  ? 'bg-purple-100 text-purple-900'
+                  : isToday
+                    ? 'border-2 border-purple-600 text-slate-900 font-semibold'
+                    : 'text-slate-700 hover:bg-slate-100'
                 } ${tempPreset !== "custom" ? 'cursor-default' : 'cursor-pointer hover:border hover:border-purple-300'}`}
             >
               {format(date, 'd')}
@@ -334,8 +342,8 @@ const DateRangeSelector = (props: DateRangeSelectorProps) => {
                         key={option.value}
                         onClick={() => handlePresetClick(option.value)}
                         className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all ${tempPreset === option.value
-                            ? 'bg-purple-100 text-purple-900 border border-purple-300'
-                            : 'text-slate-700 hover:bg-slate-50 border border-transparent hover:border-slate-200'
+                          ? 'bg-purple-100 text-purple-900 border border-purple-300'
+                          : 'text-slate-700 hover:bg-slate-50 border border-transparent hover:border-slate-200'
                           }`}
                       >
                         {option.label}

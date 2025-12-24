@@ -206,8 +206,9 @@ const FacebookPage = () => {
     void fetchFacebookData();
   }, [fetchFacebookData]);
 
-  const handleApplyRange = () => {
-    const newRange = buildDateRange(rangePreset, customRange);
+  const handleApplyRange = (newPreset: DateRangePreset, newCustomRange: { startDate?: string; endDate?: string }) => {
+    // Use fresh values passed from DateRangeSelector instead of relying on state
+    const newRange = buildDateRange(newPreset, newCustomRange);
     setDateRange(newRange);
   };
 
@@ -596,8 +597,8 @@ const FacebookPage = () => {
                   <button
                     onClick={() => setActiveTab('posts')}
                     className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeTab === 'posts'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                       }`}
                   >
                     Post
@@ -605,8 +606,8 @@ const FacebookPage = () => {
                   <button
                     onClick={() => setActiveTab('stories')}
                     className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeTab === 'stories'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                       }`}
                   >
                     Story

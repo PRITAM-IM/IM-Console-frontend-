@@ -198,8 +198,9 @@ const YouTubePage = () => {
     }
   }, [fetchYouTubeData, project?.youtubeChannelId]);
 
-  const handleApplyRange = () => {
-    const newRange = buildDateRange(rangePreset, customRange);
+  const handleApplyRange = (newPreset: DateRangePreset, newCustomRange: { startDate?: string; endDate?: string }) => {
+    // Use fresh values passed from DateRangeSelector instead of relying on state
+    const newRange = buildDateRange(newPreset, newCustomRange);
     setDateRange(newRange);
   };
 

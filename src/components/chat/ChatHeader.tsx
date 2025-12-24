@@ -10,7 +10,7 @@ interface ChatHeaderProps {
 
 const ChatHeader: React.FC<ChatHeaderProps> = ({ onClose, onClearChat, conversationId }) => {
   return (
-    <div className="flex items-center justify-between border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3">
+    <div className="flex items-center justify-between border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3 drag-handle cursor-move">
       <div className="flex items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20">
           <Bot className="h-6 w-6 text-white" strokeWidth={2.5} />
@@ -31,7 +31,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({ onClose, onClearChat, conversat
         {onClearChat && (
           <button
             onClick={onClearChat}
-            className="rounded-lg p-1.5 text-white hover:bg-white/20 transition-colors"
+            className="rounded-lg p-1.5 text-white hover:bg-white/20 transition-colors cursor-pointer"
             aria-label="Clear chat history"
             title="Clear chat history"
           >
@@ -40,7 +40,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({ onClose, onClearChat, conversat
         )}
         <button
           onClick={onClose}
-          className="rounded-lg p-1 text-white hover:bg-white/20 transition-colors"
+          className="rounded-lg p-1 text-white hover:bg-white/20 transition-colors cursor-pointer"
           aria-label="Close chat"
         >
           <X className="h-6 w-6" />
