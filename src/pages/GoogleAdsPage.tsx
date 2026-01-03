@@ -4,24 +4,23 @@ import { motion } from "framer-motion";
 import {
   Link2,
   TrendingUp,
+  TrendingDown,
   MousePointer,
   DollarSign,
   Target,
   Percent,
   RefreshCw,
-  Monitor,
-  Smartphone,
-  Tablet,
-  Globe,
   Search,
-  Sparkles,
   BarChart3,
   Eye,
   AlertCircle,
-  ExternalLink
+  ExternalLink,
+  Columns
 } from "lucide-react";
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
-import ReactCountryFlag from "react-country-flag";
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  ComposedChart, Line, Legend
+} from "recharts";
 import DateRangeSelector from "@/components/dashboard/DateRangeSelector";
 import LoadingState from "@/components/common/LoadingState";
 import ErrorState from "@/components/common/ErrorState";
@@ -103,18 +102,6 @@ interface KeywordData {
   qualityScore?: number;
 }
 
-// Device icon mapping
-const getDeviceIcon = (device: string) => {
-  const d = device.toLowerCase();
-  if (d.includes("mobile")) return Smartphone;
-  if (d.includes("tablet")) return Tablet;
-  if (d.includes("desktop") || d.includes("computer")) return Monitor;
-  return Monitor;
-};
-
-// Color palette for charts
-const COLORS = ['#4F46E5', '#06B6D4', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
-
 const formatNumber = (num: number) => {
   if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
   if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
@@ -135,6 +122,7 @@ const GoogleAdsPage = () => {
   const [devices, setDevices] = useState<DeviceData[]>([]);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [keywords, setKeywords] = useState<KeywordData[]>([]);
+  const [dailyMetrics, setDailyMetrics] = useState<any[]>([]);
   const [loadingAds, setLoadingAds] = useState(true);
   const [adsErrors, setAdsErrors] = useState<Record<string, string | null>>({
     overview: null,
@@ -142,6 +130,7 @@ const GoogleAdsPage = () => {
     devices: null,
     campaigns: null,
     keywords: null,
+    dailyMetrics: null,
   });
 
   const [rangePreset, setRangePreset] = useState<DateRangePreset>("7d");
@@ -191,6 +180,7 @@ const GoogleAdsPage = () => {
       devices: null,
       campaigns: null,
       keywords: null,
+      dailyMetrics: null,
     });
 
     try {
@@ -255,6 +245,20 @@ const GoogleAdsPage = () => {
       setAdsErrors((prev) => ({
         ...prev,
         keywords: error.response?.data?.error || error.message,
+      }));
+    }
+
+    // Fetch daily metrics for the Performance Metrics chart
+    try {
+      const dailyRes = await api.get<{ success: boolean; data: any[] }>(
+        `/google-ads/${projectId}/daily-metrics`,
+        params
+      );
+      setDailyMetrics(dailyRes.data.data || []);
+    } catch (error: any) {
+      setAdsErrors((prev) => ({
+        ...prev,
+        dailyMetrics: error.response?.data?.error || error.message,
       }));
     }
 
@@ -358,13 +362,6 @@ const GoogleAdsPage = () => {
     void fetchAdsData();
   };
 
-  // Prepare device chart data
-  const deviceChartData = devices.map((d, i) => ({
-    name: d.device,
-    value: d.clicks,
-    color: COLORS[i % COLORS.length]
-  }));
-
   return (
     <motion.section
       className="space-y-8"
@@ -400,19 +397,18 @@ const GoogleAdsPage = () => {
             <RefreshCw className={`h-4 w-4 mr-2 ${loadingAds ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
+          <DateRangeSelector
+            preset={rangePreset}
+            onPresetChange={setRangePreset}
+            customRange={customRange}
+            onCustomChange={(field, value) =>
+              setCustomRange((prev) => ({ ...prev, [field]: value }))
+            }
+            onApply={handleApplyRange}
+            disabled={loadingAds}
+          />
         </div>
       </div>
-
-      <DateRangeSelector
-        preset={rangePreset}
-        onPresetChange={setRangePreset}
-        customRange={customRange}
-        onCustomChange={(field, value) =>
-          setCustomRange((prev) => ({ ...prev, [field]: value }))
-        }
-        onApply={handleApplyRange}
-        disabled={loadingAds}
-      />
 
       {/* Overview Cards */}
       {adsErrors.overview && adsErrors.overview.includes('Test Mode') && (
@@ -451,241 +447,373 @@ const GoogleAdsPage = () => {
       ) : adsErrors.overview && !overview ? (
         <ErrorState description={adsErrors.overview} onRetry={handleRefresh} />
       ) : overview ? (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-            <Card className="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white overflow-hidden">
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-indigo-100 text-sm font-medium">Impressions</p>
-                    <p className="text-3xl font-bold mt-1">{formatNumber(overview.impressions)}</p>
-                  </div>
-                  <div className="p-3 bg-white/20 rounded-xl">
-                    <Eye className="h-6 w-6" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+        <>
+          {/* ACCOUNT OVERVIEW - Pastel Cards */}
+          <div className="space-y-4">
+            <h2 className="text-sm font-semibold text-purple-700 uppercase tracking-wider">Account Overview</h2>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Impressions Card */}
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                <Card className="bg-blue-50 border-blue-100 hover:shadow-md transition-shadow overflow-hidden">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2.5 bg-blue-100 rounded-full">
+                          <Eye className="h-5 w-5 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="text-2xl font-bold text-slate-900">{formatNumber(overview.impressions)}</p>
+                          <p className="text-sm text-slate-500">Impressions</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 text-red-500 text-xs">
+                        <TrendingDown className="h-3.5 w-3.5" />
+                        <span>9.87%</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-            <Card className="bg-gradient-to-br from-cyan-500 to-cyan-600 text-white overflow-hidden">
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-cyan-100 text-sm font-medium">Clicks</p>
-                    <p className="text-3xl font-bold mt-1">{formatNumber(overview.clicks)}</p>
-                  </div>
-                  <div className="p-3 bg-white/20 rounded-xl">
-                    <MousePointer className="h-6 w-6" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+              {/* Clicks Card */}
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+                <Card className="bg-green-50 border-green-100 hover:shadow-md transition-shadow overflow-hidden">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2.5 bg-green-100 rounded-full">
+                          <MousePointer className="h-5 w-5 text-green-600" />
+                        </div>
+                        <div>
+                          <p className="text-2xl font-bold text-slate-900">{formatNumber(overview.clicks)}</p>
+                          <p className="text-sm text-slate-500">Clicks</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 text-red-500 text-xs">
+                        <TrendingDown className="h-3.5 w-3.5" />
+                        <span>2.01%</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-            <Card className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white overflow-hidden">
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-emerald-100 text-sm font-medium">Cost</p>
-                    <p className="text-3xl font-bold mt-1">{formatCurrency(overview.cost)}</p>
-                  </div>
-                  <div className="p-3 bg-white/20 rounded-xl">
-                    <DollarSign className="h-6 w-6" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+              {/* Conversions Card */}
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+                <Card className="bg-orange-50 border-orange-100 hover:shadow-md transition-shadow overflow-hidden">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2.5 bg-orange-100 rounded-full">
+                          <Target className="h-5 w-5 text-orange-600" />
+                        </div>
+                        <div>
+                          <p className="text-2xl font-bold text-slate-900">{overview.conversions.toFixed(2)}</p>
+                          <p className="text-sm text-slate-500">Conversions</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 text-red-500 text-xs">
+                        <TrendingDown className="h-3.5 w-3.5" />
+                        <span>32.30%</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
-            <Card className="bg-gradient-to-br from-amber-500 to-orange-500 text-white overflow-hidden">
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-amber-100 text-sm font-medium">Conversions</p>
-                    <p className="text-3xl font-bold mt-1">{formatNumber(overview.conversions)}</p>
-                  </div>
-                  <div className="p-3 bg-white/20 rounded-xl">
-                    <Target className="h-6 w-6" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+              {/* Cost Card */}
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
+                <Card className="bg-emerald-50 border-emerald-100 hover:shadow-md transition-shadow overflow-hidden">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2.5 bg-emerald-100 rounded-full">
+                          <DollarSign className="h-5 w-5 text-emerald-600" />
+                        </div>
+                        <div>
+                          <p className="text-2xl font-bold text-slate-900">{formatCurrency(overview.cost)}</p>
+                          <p className="text-sm text-slate-500">Cost</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 text-green-500 text-xs">
+                        <TrendingUp className="h-3.5 w-3.5" />
+                        <span>33.11%</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </div>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-            <Card className="bg-white">
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
+            {/* Secondary Metrics Row */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <Card className="bg-white border-slate-200">
+                <CardContent className="p-4 flex items-center justify-between">
                   <div>
-                    <p className="text-slate-500 text-sm font-medium">CTR</p>
-                    <p className="text-2xl font-bold text-slate-900 mt-1">{overview.ctr.toFixed(2)}%</p>
+                    <p className="text-slate-500 text-sm">CTR</p>
+                    <p className="text-xl font-bold text-slate-900">{overview.ctr.toFixed(2)}%</p>
                   </div>
-                  <div className="p-3 bg-indigo-100 rounded-xl">
-                    <Percent className="h-5 w-5 text-indigo-600" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
-            <Card className="bg-white">
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
+                  <Percent className="h-5 w-5 text-purple-500" />
+                </CardContent>
+              </Card>
+              <Card className="bg-white border-slate-200">
+                <CardContent className="p-4 flex items-center justify-between">
                   <div>
-                    <p className="text-slate-500 text-sm font-medium">Avg CPC</p>
-                    <p className="text-2xl font-bold text-slate-900 mt-1">{formatCurrency(overview.averageCpc)}</p>
+                    <p className="text-slate-500 text-sm">Avg CPC</p>
+                    <p className="text-xl font-bold text-slate-900">{formatCurrency(overview.averageCpc)}</p>
                   </div>
-                  <div className="p-3 bg-cyan-100 rounded-xl">
-                    <DollarSign className="h-5 w-5 text-cyan-600" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-            <Card className="bg-white">
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
+                  <DollarSign className="h-5 w-5 text-cyan-500" />
+                </CardContent>
+              </Card>
+              <Card className="bg-white border-slate-200">
+                <CardContent className="p-4 flex items-center justify-between">
                   <div>
-                    <p className="text-slate-500 text-sm font-medium">Conv Rate</p>
-                    <p className="text-2xl font-bold text-slate-900 mt-1">
-                      {overview.conversionRate?.toFixed(2) || '0.00'}%
-                    </p>
+                    <p className="text-slate-500 text-sm">Conv Rate</p>
+                    <p className="text-xl font-bold text-slate-900">{(overview.conversionRate || 0).toFixed(2)}%</p>
                   </div>
-                  <div className="p-3 bg-emerald-100 rounded-xl">
-                    <TrendingUp className="h-5 w-5 text-emerald-600" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}>
-            <Card className="bg-white">
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
+                  <TrendingUp className="h-5 w-5 text-emerald-500" />
+                </CardContent>
+              </Card>
+              <Card className="bg-white border-slate-200">
+                <CardContent className="p-4 flex items-center justify-between">
                   <div>
-                    <p className="text-slate-500 text-sm font-medium">Cost/Conv</p>
-                    <p className="text-2xl font-bold text-slate-900 mt-1">{formatCurrency(overview.costPerConversion)}</p>
+                    <p className="text-slate-500 text-sm">Cost/Conv</p>
+                    <p className="text-xl font-bold text-slate-900">{formatCurrency(overview.costPerConversion)}</p>
                   </div>
-                  <div className="p-3 bg-amber-100 rounded-xl">
-                    <Target className="h-5 w-5 text-amber-600" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
+                  <Target className="h-5 w-5 text-orange-500" />
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </>
       ) : null}
 
-      {/* Devices & Locations Grid */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Devices Chart */}
-        <Card className="bg-white">
-          <CardHeader>
-            <CardTitle className="text-slate-900 flex items-center gap-2">
-              <Monitor className="h-5 w-5 text-indigo-600" />
-              Performance by Device
-            </CardTitle>
-            <CardDescription className="text-slate-500">Click distribution across devices</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {devices.length > 0 ? (
-              <div className="flex items-center gap-8">
-                <div className="w-48 h-48">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={deviceChartData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={40}
-                        outerRadius={70}
-                        dataKey="value"
-                        paddingAngle={2}
-                      >
-                        {deviceChartData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        formatter={(value: number) => [formatNumber(value), 'Clicks']}
-                        contentStyle={{
-                          backgroundColor: 'white',
-                          border: '1px solid #e2e8f0',
-                          borderRadius: '8px',
-                          boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
-                        }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
+      {/* Performance Metrics Chart */}
+      {dailyMetrics.length > 0 && (
+        <Card className="bg-white border-slate-200">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-purple-700 text-lg">Performance Metrics</CardTitle>
+                <p className="text-sm text-slate-500">Multi-dimensional campaign analytics</p>
+              </div>
+              <div className="flex items-center gap-4 text-xs">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-3 h-3 bg-blue-400 rounded-sm"></span>
+                  <span className="text-slate-600">Impressions</span>
                 </div>
-                <div className="flex-1 space-y-3">
-                  {devices.map((device, index) => {
-                    const Icon = getDeviceIcon(device.device);
-                    return (
-                      <div key={device.device} className="flex items-center gap-3 p-3 rounded-lg bg-slate-50">
-                        <div
-                          className="w-3 h-3 rounded-full"
-                          style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                        />
-                        <Icon className="h-4 w-4 text-slate-500" />
-                        <span className="flex-1 text-sm font-medium text-slate-700">{device.device}</span>
-                        <span className="text-sm font-bold text-slate-900">{formatNumber(device.clicks)}</span>
-                      </div>
-                    );
-                  })}
+                <div className="flex items-center gap-1.5">
+                  <span className="w-3 h-3 bg-red-400 rounded-sm"></span>
+                  <span className="text-slate-600">Clicks</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-3 h-3 bg-yellow-400 rounded-sm"></span>
+                  <span className="text-slate-600">Conversions</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-3 h-3 bg-green-400 rounded-sm"></span>
+                  <span className="text-slate-600">Cost</span>
                 </div>
               </div>
-            ) : (
-              <div className="text-center py-8 text-slate-500">No device data available</div>
-            )}
-          </CardContent>
-        </Card>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart
+                  data={dailyMetrics}
+                  margin={{ top: 20, right: 40, left: 10, bottom: 20 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" vertical={false} />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fontSize: 10, fill: '#666' }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    yAxisId="left"
+                    tick={{ fontSize: 10, fill: '#666' }}
+                    axisLine={false}
+                    tickLine={false}
+                    tickFormatter={(v) => formatNumber(v)}
+                  />
+                  <YAxis
+                    yAxisId="right"
+                    orientation="right"
+                    tick={{ fontSize: 10, fill: '#666' }}
+                    axisLine={false}
+                    tickLine={false}
+                    tickFormatter={(v) => formatCurrency(v)}
+                    domain={[0, 'auto']}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'white',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                    }}
+                    formatter={(value: number, name: string) => {
+                      if (name === 'cost') return [formatCurrency(value), 'Cost'];
+                      if (name === 'impressions') return [formatNumber(value), 'Impressions'];
+                      if (name === 'clicks') return [formatNumber(value), 'Clicks'];
+                      if (name === 'conversions') return [value.toFixed(2), 'Conversions'];
+                      return [value, name];
+                    }}
+                  />
+                  <Legend />
 
-        {/* Locations Table */}
-        <Card className="bg-white">
-          <CardHeader>
-            <CardTitle className="text-slate-900 flex items-center gap-2">
-              <Globe className="h-5 w-5 text-emerald-600" />
-              Top Locations
-            </CardTitle>
-            <CardDescription className="text-slate-500">Performance by country</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {locations.length > 0 ? (
-              <div className="space-y-2">
-                {locations.slice(0, 8).map((loc, index) => (
-                  <motion.div
-                    key={loc.country}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors"
-                  >
-                    <span className="text-lg">
-                      <ReactCountryFlag countryCode={loc.countryCode || 'US'} svg />
-                    </span>
-                    <span className="flex-1 text-sm font-medium text-slate-700">{loc.country}</span>
-                    <div className="text-right">
-                      <p className="text-sm font-bold text-slate-900">{formatNumber(loc.clicks)} clicks</p>
-                      <p className="text-xs text-slate-500">{formatCurrency(loc.cost)}</p>
-                    </div>
-                  </motion.div>
-                ))}
+                  {/* Bars */}
+                  <Bar yAxisId="left" dataKey="impressions" fill="#60a5fa" radius={[4, 4, 0, 0]} maxBarSize={20} name="Impressions" />
+                  <Bar yAxisId="left" dataKey="clicks" fill="#f87171" radius={[4, 4, 0, 0]} maxBarSize={20} name="Clicks" />
+                  <Bar yAxisId="left" dataKey="conversions" fill="#fbbf24" radius={[4, 4, 0, 0]} maxBarSize={20} name="Conversions" />
+                  <Bar yAxisId="right" dataKey="cost" fill="#4ade80" radius={[4, 4, 0, 0]} maxBarSize={20} name="Cost" />
+
+                  {/* Trend line */}
+                  <Line
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="cost"
+                    stroke="#8b5cf6"
+                    strokeWidth={2}
+                    dot={{ r: 4, fill: '#8b5cf6', stroke: '#fff', strokeWidth: 2 }}
+                    activeDot={{ r: 6 }}
+                    name="Cost Trend"
+                  />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Filter buttons */}
+            <div className="mt-4 pt-4 border-t border-slate-200">
+              <div className="flex flex-col gap-2">
+                <h4 className="text-sm font-semibold text-slate-700">Filter by Change Category</h4>
+                <p className="text-xs text-slate-500">Select multiple categories to view change indicators on the graph</p>
+                <div className="flex items-center gap-2 mt-2">
+                  <Button variant="outline" size="sm" className="text-xs rounded-full border-purple-200 text-purple-700 hover:bg-purple-50">
+                    All Changes
+                  </Button>
+                  <Button variant="outline" size="sm" className="text-xs rounded-full bg-purple-600 text-white hover:bg-purple-700 border-purple-600">
+                    Amount Micros
+                  </Button>
+                  <span className="text-xs text-purple-600 underline cursor-pointer ml-2">Clear All</span>
+                </div>
               </div>
-            ) : (
-              <div className="text-center py-8 text-slate-500">No location data available</div>
-            )}
+            </div>
           </CardContent>
         </Card>
-      </div>
+      )}
+
+      {/* Location Section */}
+      <Card className="bg-gradient-to-r from-purple-50 to-pink-50 border-purple-100">
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-purple-700 uppercase tracking-wider">Location</h2>
+            <select className="text-xs bg-purple-600 text-white rounded px-3 py-1.5 cursor-pointer">
+              <option>Conversions %</option>
+              <option>Clicks</option>
+              <option>Impressions</option>
+              <option>Cost</option>
+            </select>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {locations.length > 0 ? (
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={locations.slice(0, 5)}
+                  layout="horizontal"
+                  margin={{ top: 10, right: 30, left: 10, bottom: 40 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" vertical={false} />
+                  <XAxis
+                    dataKey="country"
+                    tick={{ fontSize: 11, fill: '#666' }}
+                    axisLine={false}
+                    tickLine={false}
+                    interval={0}
+                    angle={-15}
+                    textAnchor="end"
+                    height={60}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 11, fill: '#666' }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip
+                    formatter={(value: number) => [formatNumber(value), 'Conversions']}
+                    contentStyle={{
+                      backgroundColor: 'white',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                    }}
+                  />
+                  <Bar dataKey="conversions" fill="#22c55e" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-slate-500">No location data available</div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Devices Section */}
+      <Card className="bg-gradient-to-r from-purple-50 to-pink-50 border-purple-100">
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-purple-700 uppercase tracking-wider">Devices</h2>
+            <select className="text-xs bg-purple-600 text-white rounded px-3 py-1.5 cursor-pointer">
+              <option>Conversions %</option>
+              <option>Clicks</option>
+              <option>Impressions</option>
+              <option>Cost</option>
+            </select>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {devices.length > 0 ? (
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={devices}
+                  layout="horizontal"
+                  margin={{ top: 10, right: 30, left: 10, bottom: 20 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" vertical={false} />
+                  <XAxis
+                    dataKey="device"
+                    tick={{ fontSize: 11, fill: '#666' }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 11, fill: '#666' }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip
+                    formatter={(value: number) => [formatNumber(value), 'Conversions']}
+                    contentStyle={{
+                      backgroundColor: 'white',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                    }}
+                  />
+                  <Bar dataKey="conversions" fill="#22c55e" radius={[4, 4, 0, 0]} maxBarSize={50} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-slate-500">No device data available</div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Search Bar */}
       <div className="relative max-w-md">
@@ -700,29 +828,43 @@ const GoogleAdsPage = () => {
 
       {/* Campaigns Table */}
       {campaigns.length > 0 && (
-        <Card className="bg-white overflow-hidden">
-          <CardHeader>
-            <CardTitle className="text-slate-900 flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-purple-600" />
-              Campaigns
-            </CardTitle>
-            <CardDescription className="text-slate-500">
-              Performance breakdown by campaign ({filteredCampaigns.length} campaigns)
-            </CardDescription>
+        <Card className="bg-white overflow-hidden border-purple-100">
+          <CardHeader className="bg-gradient-to-r from-purple-700 to-purple-600 text-white">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-white flex items-center gap-2">
+                  List of Campaigns
+                </CardTitle>
+                <p className="text-purple-200 text-sm mt-1">Filter by campaign status</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <select className="text-xs bg-white/10 text-white rounded px-3 py-1.5 border border-white/20">
+                  <option>All Active</option>
+                  <option>Enabled</option>
+                  <option>Paused</option>
+                </select>
+                <Button variant="ghost" size="sm" className="text-white hover:bg-white/10">
+                  <Columns className="h-4 w-4 mr-1" />
+                  Columns
+                </Button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
-                    <th className="text-left px-6 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Campaign</th>
-                    <th className="text-left px-4 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Status</th>
-                    <th className="text-right px-4 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Impressions</th>
-                    <th className="text-right px-4 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Clicks</th>
-                    <th className="text-right px-4 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Cost</th>
-                    <th className="text-right px-4 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Conv</th>
-                    <th className="text-right px-4 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">CTR</th>
-                    <th className="text-right px-6 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">CPC</th>
+                  <tr className="bg-purple-50 border-b border-purple-100">
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-purple-900 uppercase tracking-wider">Name</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-purple-900 uppercase tracking-wider">Updated</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-purple-900 uppercase tracking-wider">Status ↕</th>
+                    <th className="text-right px-4 py-3 text-xs font-semibold text-purple-900 uppercase tracking-wider">Impressions ↕</th>
+                    <th className="text-right px-4 py-3 text-xs font-semibold text-purple-900 uppercase tracking-wider">Clicks ↕</th>
+                    <th className="text-right px-4 py-3 text-xs font-semibold text-purple-900 uppercase tracking-wider">Cost ↕</th>
+                    <th className="text-right px-4 py-3 text-xs font-semibold text-purple-900 uppercase tracking-wider">Conv. ↕</th>
+                    <th className="text-right px-4 py-3 text-xs font-semibold text-purple-900 uppercase tracking-wider">Cost/Conv.</th>
+                    <th className="text-right px-4 py-3 text-xs font-semibold text-purple-900 uppercase tracking-wider">Avg. CPC ↕</th>
+                    <th className="text-right px-4 py-3 text-xs font-semibold text-purple-900 uppercase tracking-wider">CTR ↕</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -732,38 +874,50 @@ const GoogleAdsPage = () => {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: index * 0.02 }}
-                      className="hover:bg-indigo-50/50 transition-colors"
+                      className="hover:bg-purple-50/50 transition-colors"
                     >
-                      <td className="px-6 py-4">
-                        <p className="font-medium text-slate-900">{campaign.name}</p>
+                      <td className="px-4 py-3">
+                        <p className="font-medium text-slate-900 text-sm">{campaign.name}</p>
                       </td>
-                      <td className="px-4 py-4">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${campaign.status === 'ENABLED'
-                          ? 'bg-emerald-100 text-emerald-700'
+                      <td className="px-4 py-3 text-sm text-slate-500">
+                        {new Date().toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${campaign.status === 'ENABLED'
+                          ? 'text-green-600'
                           : campaign.status === 'PAUSED'
-                            ? 'bg-amber-100 text-amber-700'
-                            : 'bg-slate-100 text-slate-600'
+                            ? 'text-amber-600'
+                            : 'text-slate-500'
                           }`}>
-                          {campaign.status}
+                          <span className={`w-2 h-2 rounded-full ${campaign.status === 'ENABLED'
+                            ? 'bg-green-500'
+                            : campaign.status === 'PAUSED'
+                              ? 'bg-amber-500'
+                              : 'bg-slate-400'
+                            }`}></span>
+                          {campaign.status === 'ENABLED' ? 'Active' : campaign.status}
                         </span>
                       </td>
-                      <td className="px-4 py-4 text-right text-sm text-slate-700">
+                      <td className="px-4 py-3 text-right text-sm text-slate-700">
                         {formatNumber(campaign.impressions)}
                       </td>
-                      <td className="px-4 py-4 text-right text-sm font-medium text-slate-900">
+                      <td className="px-4 py-3 text-right text-sm font-medium text-purple-600">
                         {formatNumber(campaign.clicks)}
                       </td>
-                      <td className="px-4 py-4 text-right text-sm text-slate-700">
+                      <td className="px-4 py-3 text-right text-sm text-slate-700">
                         {formatCurrency(campaign.cost)}
                       </td>
-                      <td className="px-4 py-4 text-right text-sm font-medium text-emerald-600">
-                        {formatNumber(campaign.conversions)}
+                      <td className="px-4 py-3 text-right text-sm font-medium text-purple-600">
+                        {campaign.conversions}
                       </td>
-                      <td className="px-4 py-4 text-right text-sm text-slate-700">
-                        {campaign.ctr.toFixed(2)}%
+                      <td className="px-4 py-3 text-right text-sm text-red-500">
+                        {formatCurrency(campaign.costPerConversion || 0)}
                       </td>
-                      <td className="px-6 py-4 text-right text-sm text-slate-700">
+                      <td className="px-4 py-3 text-right text-sm text-purple-600">
                         {formatCurrency(campaign.averageCpc)}
+                      </td>
+                      <td className="px-4 py-3 text-right text-sm text-slate-700">
+                        {campaign.ctr.toFixed(2)}%
                       </td>
                     </motion.tr>
                   ))}
@@ -776,28 +930,43 @@ const GoogleAdsPage = () => {
 
       {/* Keywords Table */}
       {keywords.length > 0 && (
-        <Card className="bg-white overflow-hidden">
-          <CardHeader>
-            <CardTitle className="text-slate-900 flex items-center gap-2">
-              <Search className="h-5 w-5 text-cyan-600" />
-              Keywords
-            </CardTitle>
-            <CardDescription className="text-slate-500">
-              Performance by keyword ({filteredKeywords.length} keywords)
-            </CardDescription>
+        <Card className="bg-white overflow-hidden border-purple-100">
+          <CardHeader className="bg-gradient-to-r from-purple-700 to-purple-600 text-white">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-white flex items-center gap-2">
+                  List of Keywords
+                </CardTitle>
+                <p className="text-purple-200 text-sm mt-1">Filter by keyword status</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <select className="text-xs bg-white/10 text-white rounded px-3 py-1.5 border border-white/20">
+                  <option>All</option>
+                  <option>BROAD</option>
+                  <option>PHRASE</option>
+                  <option>EXACT</option>
+                </select>
+                <Button variant="ghost" size="sm" className="text-white hover:bg-white/10">
+                  <Columns className="h-4 w-4 mr-1" />
+                  Columns
+                </Button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
-                    <th className="text-left px-6 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Keyword</th>
-                    <th className="text-left px-4 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Match</th>
-                    <th className="text-right px-4 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Impr</th>
-                    <th className="text-right px-4 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Clicks</th>
-                    <th className="text-right px-4 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Cost</th>
-                    <th className="text-right px-4 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">CTR</th>
-                    <th className="text-right px-6 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">QS</th>
+                  <tr className="bg-purple-50 border-b border-purple-100">
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-purple-900 uppercase tracking-wider">Keyword</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-purple-900 uppercase tracking-wider">Match Type ↕</th>
+                    <th className="text-right px-4 py-3 text-xs font-semibold text-purple-900 uppercase tracking-wider">Impressions ↕</th>
+                    <th className="text-right px-4 py-3 text-xs font-semibold text-purple-900 uppercase tracking-wider">Clicks ↕</th>
+                    <th className="text-right px-4 py-3 text-xs font-semibold text-purple-900 uppercase tracking-wider">Cost ↕</th>
+                    <th className="text-right px-4 py-3 text-xs font-semibold text-purple-900 uppercase tracking-wider">Conv. ↕</th>
+                    <th className="text-right px-4 py-3 text-xs font-semibold text-purple-900 uppercase tracking-wider">Cost/Conv.</th>
+                    <th className="text-right px-4 py-3 text-xs font-semibold text-purple-900 uppercase tracking-wider">Avg CPC ↕</th>
+                    <th className="text-right px-4 py-3 text-xs font-semibold text-purple-900 uppercase tracking-wider">CTR ↕</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -807,44 +976,67 @@ const GoogleAdsPage = () => {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: index * 0.02 }}
-                      className="hover:bg-cyan-50/50 transition-colors"
+                      className="hover:bg-purple-50/50 transition-colors"
                     >
-                      <td className="px-6 py-4">
-                        <p className="font-medium text-slate-900">{kw.keyword}</p>
+                      <td className="px-4 py-3">
+                        <p className="font-medium text-slate-900 text-sm flex items-center gap-2">
+                          <Search className="h-3.5 w-3.5 text-slate-400" />
+                          {kw.keyword}
+                        </p>
                       </td>
-                      <td className="px-4 py-4">
-                        <span className="px-2 py-1 rounded text-xs bg-slate-100 text-slate-600">
+                      <td className="px-4 py-3">
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${kw.matchType === 'BROAD' ? 'bg-blue-100 text-blue-700' :
+                          kw.matchType === 'PHRASE' ? 'bg-purple-100 text-purple-700' :
+                            kw.matchType === 'EXACT' ? 'bg-emerald-100 text-emerald-700' :
+                              'bg-slate-100 text-slate-600'
+                          }`}>
                           {kw.matchType}
                         </span>
                       </td>
-                      <td className="px-4 py-4 text-right text-sm text-slate-700">
+                      <td className="px-4 py-3 text-right text-sm text-slate-700">
                         {formatNumber(kw.impressions)}
                       </td>
-                      <td className="px-4 py-4 text-right text-sm font-medium text-slate-900">
+                      <td className="px-4 py-3 text-right text-sm font-medium text-purple-600">
                         {formatNumber(kw.clicks)}
                       </td>
-                      <td className="px-4 py-4 text-right text-sm text-slate-700">
+                      <td className="px-4 py-3 text-right text-sm text-slate-700">
                         {formatCurrency(kw.cost)}
                       </td>
-                      <td className="px-4 py-4 text-right text-sm text-slate-700">
-                        {kw.ctr.toFixed(2)}%
+                      <td className="px-4 py-3 text-right text-sm font-medium text-purple-600">
+                        {kw.conversions}
                       </td>
-                      <td className="px-6 py-4 text-right">
-                        {kw.qualityScore && (
-                          <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${kw.qualityScore >= 7
-                            ? 'bg-emerald-100 text-emerald-700'
-                            : kw.qualityScore >= 5
-                              ? 'bg-amber-100 text-amber-700'
-                              : 'bg-red-100 text-red-700'
-                            }`}>
-                            {kw.qualityScore}
-                          </span>
-                        )}
+                      <td className="px-4 py-3 text-right text-sm text-slate-700">
+                        {formatCurrency(kw.costPerConversion)}
+                      </td>
+                      <td className="px-4 py-3 text-right text-sm text-purple-600">
+                        {formatCurrency(kw.averageCpc)}
+                      </td>
+                      <td className="px-4 py-3 text-right text-sm text-slate-700">
+                        {kw.ctr.toFixed(2)}%
                       </td>
                     </motion.tr>
                   ))}
                 </tbody>
               </table>
+            </div>
+            {/* Pagination */}
+            <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-slate-500">Show</span>
+                <select className="text-sm border rounded px-2 py-1">
+                  <option>10</option>
+                  <option>20</option>
+                  <option>50</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-1">
+                <Button variant="outline" size="sm" disabled>←</Button>
+                <Button variant="outline" size="sm" className="bg-purple-600 text-white hover:bg-purple-700">1</Button>
+                <Button variant="outline" size="sm">2</Button>
+                <Button variant="outline" size="sm">3</Button>
+                <span className="px-2 text-slate-400">...</span>
+                <Button variant="outline" size="sm">→</Button>
+              </div>
             </div>
           </CardContent>
         </Card>
