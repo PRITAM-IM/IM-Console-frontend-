@@ -6,7 +6,7 @@ import {
   TrendingUp,
   TrendingDown,
   MousePointer,
-  DollarSign,
+  IndianRupee,
   Target,
   Percent,
   RefreshCw,
@@ -14,8 +14,7 @@ import {
   BarChart3,
   Eye,
   AlertCircle,
-  ExternalLink,
-  Columns
+  ExternalLink
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -30,7 +29,6 @@ import DisconnectButton from "@/components/common/DisconnectButton";
 import AIMasterButton from "@/components/common/AIMasterButton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import ConnectGoogleAds from "@/components/projects/ConnectGoogleAds";
 import api from "@/lib/api";
 import { buildDateRange } from "@/lib/utils";
@@ -50,6 +48,11 @@ interface GoogleAdsOverviewMetrics {
   conversionRate?: number;
   interactions?: number;
   interactionRate?: number;
+  // Change percentages compared to previous period
+  impressionsChange?: number;
+  clicksChange?: number;
+  conversionsChange?: number;
+  costChange?: number;
 }
 
 interface LocationData {
@@ -136,7 +139,11 @@ const GoogleAdsPage = () => {
   const [rangePreset, setRangePreset] = useState<DateRangePreset>("7d");
   const [customRange, setCustomRange] = useState<{ startDate?: string; endDate?: string }>({});
   const [activeRange, setActiveRange] = useState<DateRange>(() => buildDateRange("7d"));
-  const [searchQuery, setSearchQuery] = useState("");
+  const [campaignStatusFilter, setCampaignStatusFilter] = useState<string>("All");
+  const [keywordMatchTypeFilter, setKeywordMatchTypeFilter] = useState<string>("All");
+  const [rowsLimit, setRowsLimit] = useState<number>(20);
+  const [locationMetric, setLocationMetric] = useState<string>("conversions");
+  const [deviceMetric, setDeviceMetric] = useState<string>("conversions");
 
   const formatCurrency = (num: number) => {
     const currency = project?.googleAdsCurrency || 'INR';
@@ -281,15 +288,26 @@ const GoogleAdsPage = () => {
     await fetchProject();
   };
 
-  // Filter campaigns by search
-  const filteredCampaigns = campaigns.filter(c =>
-    c.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filter campaigns by search and status
+  const filteredCampaigns = useMemo(() => {
+    return campaigns.filter((campaign) => {
+      // Status filter
+      if (campaignStatusFilter !== "All") {
+        if (campaignStatusFilter === "All Active" && campaign.status !== "ENABLED" && campaign.status !== "PAUSED") return false;
+        if (campaignStatusFilter === "Enabled" && campaign.status !== "ENABLED") return false;
+        if (campaignStatusFilter === "Paused" && campaign.status !== "PAUSED") return false;
+      }
+      return true;
+    });
+  }, [campaigns, campaignStatusFilter]);
 
-  // Filter keywords by search
-  const filteredKeywords = keywords.filter(k =>
-    k.keyword.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredKeywords = useMemo(() => {
+    return keywords.filter((kw) => {
+      // Match Type filter
+      if (keywordMatchTypeFilter !== "All" && kw.matchType !== keywordMatchTypeFilter) return false;
+      return true;
+    });
+  }, [keywords, keywordMatchTypeFilter]);
 
   if (!projectId) {
     return (
@@ -466,10 +484,12 @@ const GoogleAdsPage = () => {
                           <p className="text-sm text-slate-500">Impressions</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-1 text-red-500 text-xs">
-                        <TrendingDown className="h-3.5 w-3.5" />
-                        <span>9.87%</span>
-                      </div>
+                      {overview.impressionsChange !== undefined && (
+                        <div className={`flex items-center gap-1 text-xs ${overview.impressionsChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                          {overview.impressionsChange >= 0 ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
+                          <span>{Math.abs(overview.impressionsChange).toFixed(2)}%</span>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -489,10 +509,12 @@ const GoogleAdsPage = () => {
                           <p className="text-sm text-slate-500">Clicks</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-1 text-red-500 text-xs">
-                        <TrendingDown className="h-3.5 w-3.5" />
-                        <span>2.01%</span>
-                      </div>
+                      {overview.clicksChange !== undefined && (
+                        <div className={`flex items-center gap-1 text-xs ${overview.clicksChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                          {overview.clicksChange >= 0 ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
+                          <span>{Math.abs(overview.clicksChange).toFixed(2)}%</span>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -512,10 +534,12 @@ const GoogleAdsPage = () => {
                           <p className="text-sm text-slate-500">Conversions</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-1 text-red-500 text-xs">
-                        <TrendingDown className="h-3.5 w-3.5" />
-                        <span>32.30%</span>
-                      </div>
+                      {overview.conversionsChange !== undefined && (
+                        <div className={`flex items-center gap-1 text-xs ${overview.conversionsChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                          {overview.conversionsChange >= 0 ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
+                          <span>{Math.abs(overview.conversionsChange).toFixed(2)}%</span>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -528,17 +552,19 @@ const GoogleAdsPage = () => {
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
                         <div className="p-2.5 bg-emerald-100 rounded-full">
-                          <DollarSign className="h-5 w-5 text-emerald-600" />
+                          <IndianRupee className="h-5 w-5 text-emerald-600" />
                         </div>
                         <div>
                           <p className="text-2xl font-bold text-slate-900">{formatCurrency(overview.cost)}</p>
                           <p className="text-sm text-slate-500">Cost</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-1 text-green-500 text-xs">
-                        <TrendingUp className="h-3.5 w-3.5" />
-                        <span>33.11%</span>
-                      </div>
+                      {overview.costChange !== undefined && (
+                        <div className={`flex items-center gap-1 text-xs ${overview.costChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                          {overview.costChange >= 0 ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
+                          <span>{Math.abs(overview.costChange).toFixed(2)}%</span>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -562,7 +588,7 @@ const GoogleAdsPage = () => {
                     <p className="text-slate-500 text-sm">Avg CPC</p>
                     <p className="text-xl font-bold text-slate-900">{formatCurrency(overview.averageCpc)}</p>
                   </div>
-                  <DollarSign className="h-5 w-5 text-cyan-500" />
+                  <IndianRupee className="h-5 w-5 text-cyan-500" />
                 </CardContent>
               </Card>
               <Card className="bg-white border-slate-200">
@@ -685,186 +711,239 @@ const GoogleAdsPage = () => {
               </ResponsiveContainer>
             </div>
 
-            {/* Filter buttons */}
-            <div className="mt-4 pt-4 border-t border-slate-200">
-              <div className="flex flex-col gap-2">
-                <h4 className="text-sm font-semibold text-slate-700">Filter by Change Category</h4>
-                <p className="text-xs text-slate-500">Select multiple categories to view change indicators on the graph</p>
-                <div className="flex items-center gap-2 mt-2">
-                  <Button variant="outline" size="sm" className="text-xs rounded-full border-purple-200 text-purple-700 hover:bg-purple-50">
-                    All Changes
-                  </Button>
-                  <Button variant="outline" size="sm" className="text-xs rounded-full bg-purple-600 text-white hover:bg-purple-700 border-purple-600">
-                    Amount Micros
-                  </Button>
-                  <span className="text-xs text-purple-600 underline cursor-pointer ml-2">Clear All</span>
-                </div>
-              </div>
-            </div>
+
           </CardContent>
         </Card>
       )}
 
-      {/* Location Section */}
-      <Card className="bg-gradient-to-r from-purple-50 to-pink-50 border-purple-100">
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-purple-700 uppercase tracking-wider">Location</h2>
-            <select className="text-xs bg-purple-600 text-white rounded px-3 py-1.5 cursor-pointer">
-              <option>Conversions %</option>
-              <option>Clicks</option>
-              <option>Impressions</option>
-              <option>Cost</option>
-            </select>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {locations.length > 0 ? (
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={locations.slice(0, 5)}
-                  layout="horizontal"
-                  margin={{ top: 10, right: 30, left: 10, bottom: 40 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" vertical={false} />
-                  <XAxis
-                    dataKey="country"
-                    tick={{ fontSize: 11, fill: '#666' }}
-                    axisLine={false}
-                    tickLine={false}
-                    interval={0}
-                    angle={-15}
-                    textAnchor="end"
-                    height={60}
-                  />
-                  <YAxis
-                    tick={{ fontSize: 11, fill: '#666' }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <Tooltip
-                    formatter={(value: number) => [formatNumber(value), 'Conversions']}
-                    contentStyle={{
-                      backgroundColor: 'white',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
-                    }}
-                  />
-                  <Bar dataKey="conversions" fill="#22c55e" radius={[4, 4, 0, 0]} maxBarSize={40} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <div className="text-center py-8 text-slate-500">No location data available</div>
-          )}
-        </CardContent>
-      </Card>
 
-      {/* Devices Section */}
-      <Card className="bg-gradient-to-r from-purple-50 to-pink-50 border-purple-100">
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-purple-700 uppercase tracking-wider">Devices</h2>
-            <select className="text-xs bg-purple-600 text-white rounded px-3 py-1.5 cursor-pointer">
-              <option>Conversions %</option>
-              <option>Clicks</option>
-              <option>Impressions</option>
-              <option>Cost</option>
-            </select>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {devices.length > 0 ? (
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={devices}
-                  layout="horizontal"
-                  margin={{ top: 10, right: 30, left: 10, bottom: 20 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" vertical={false} />
-                  <XAxis
-                    dataKey="device"
-                    tick={{ fontSize: 11, fill: '#666' }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    tick={{ fontSize: 11, fill: '#666' }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <Tooltip
-                    formatter={(value: number) => [formatNumber(value), 'Conversions']}
-                    contentStyle={{
-                      backgroundColor: 'white',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
-                    }}
-                  />
-                  <Bar dataKey="conversions" fill="#22c55e" radius={[4, 4, 0, 0]} maxBarSize={50} />
-                </BarChart>
-              </ResponsiveContainer>
+      {/* Location and Devices Section - Side by Side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Location Section */}
+        <Card className="bg-gradient-to-r from-purple-50 to-pink-50 border-purple-100">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-purple-700 uppercase tracking-wider">Location</h2>
+              <select
+                value={locationMetric}
+                onChange={(e) => setLocationMetric(e.target.value)}
+                className="text-xs bg-purple-600 text-white rounded px-3 py-1.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-400"
+              >
+                <option value="conversions">Conversions</option>
+                <option value="clicks">Clicks</option>
+                <option value="impressions">Impressions</option>
+                <option value="cost">Cost</option>
+              </select>
             </div>
-          ) : (
-            <div className="text-center py-8 text-slate-500">No device data available</div>
-          )}
-        </CardContent>
-      </Card>
+          </CardHeader>
+          <CardContent>
+            {locations.length > 0 ? (
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={[...locations].sort((a, b) => (b as any)[locationMetric] - (a as any)[locationMetric]).slice(0, 5)}
+                    layout="horizontal"
+                    margin={{ top: 10, right: 30, left: 10, bottom: 40 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" vertical={false} />
+                    <XAxis
+                      dataKey="country"
+                      tick={{ fontSize: 11, fill: '#666' }}
+                      axisLine={false}
+                      tickLine={false}
+                      interval={0}
+                      angle={-15}
+                      textAnchor="end"
+                      height={60}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 11, fill: '#666' }}
+                      axisLine={false}
+                      tickLine={false}
+                      tickFormatter={(value) => locationMetric === 'cost' ? formatNumber(value) : formatNumber(value)}
+                    />
+                    <Tooltip
+                      formatter={(value: number) => [
+                        locationMetric === 'cost' ? formatCurrency(value) : formatNumber(value),
+                        locationMetric.charAt(0).toUpperCase() + locationMetric.slice(1)
+                      ]}
+                      contentStyle={{
+                        backgroundColor: 'white',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                      }}
+                    />
+                    <Bar
+                      dataKey={locationMetric}
+                      fill={
+                        locationMetric === 'conversions' ? '#22c55e' :
+                          locationMetric === 'clicks' ? '#f87171' :
+                            locationMetric === 'impressions' ? '#60a5fa' :
+                              '#4ade80'
+                      }
+                      radius={[4, 4, 0, 0]}
+                      maxBarSize={40}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-slate-500">No location data available</div>
+            )}
+          </CardContent>
+        </Card>
 
-      {/* Search Bar */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-        <Input
-          placeholder="Search campaigns or keywords..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10 bg-white border-slate-200"
-        />
+        {/* Devices Section */}
+        <Card className="bg-gradient-to-r from-purple-50 to-pink-50 border-purple-100">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-purple-700 uppercase tracking-wider">Devices</h2>
+              <select
+                value={deviceMetric}
+                onChange={(e) => setDeviceMetric(e.target.value)}
+                className="text-xs bg-purple-600 text-white rounded px-3 py-1.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-400"
+              >
+                <option value="conversions">Conversions</option>
+                <option value="clicks">Clicks</option>
+                <option value="impressions">Impressions</option>
+                <option value="cost">Cost</option>
+              </select>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {devices.length > 0 ? (
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={[...devices].sort((a, b) => (b as any)[deviceMetric] - (a as any)[deviceMetric])}
+                    layout="horizontal"
+                    margin={{ top: 10, right: 30, left: 10, bottom: 20 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" vertical={false} />
+                    <XAxis
+                      dataKey="device"
+                      tick={{ fontSize: 11, fill: '#666' }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 11, fill: '#666' }}
+                      axisLine={false}
+                      tickLine={false}
+                      tickFormatter={(value) => deviceMetric === 'cost' ? formatNumber(value) : formatNumber(value)}
+                    />
+                    <Tooltip
+                      formatter={(value: number) => [
+                        deviceMetric === 'cost' ? formatCurrency(value) : formatNumber(value),
+                        deviceMetric.charAt(0).toUpperCase() + deviceMetric.slice(1)
+                      ]}
+                      contentStyle={{
+                        backgroundColor: 'white',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                      }}
+                    />
+                    <Bar
+                      dataKey={deviceMetric}
+                      fill={
+                        deviceMetric === 'conversions' ? '#22c55e' :
+                          deviceMetric === 'clicks' ? '#f87171' :
+                            deviceMetric === 'impressions' ? '#60a5fa' :
+                              '#4ade80'
+                      }
+                      radius={[4, 4, 0, 0]}
+                      maxBarSize={50}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-slate-500">No device data available</div>
+            )}
+          </CardContent>
+        </Card>
       </div>
+
+
 
       {/* Campaigns Table */}
       {campaigns.length > 0 && (
-        <Card className="bg-white overflow-hidden border-purple-100">
-          <CardHeader className="bg-gradient-to-r from-purple-700 to-purple-600 text-white">
-            <div className="flex items-center justify-between">
+        <Card className="bg-white overflow-hidden border-purple-100 shadow-sm">
+          <CardHeader className="bg-gradient-to-r from-purple-700 to-purple-600 text-white px-6 py-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <CardTitle className="text-white flex items-center gap-2">
+                <CardTitle className="text-white flex items-center gap-2 text-lg">
                   List of Campaigns
                 </CardTitle>
-                <p className="text-purple-200 text-sm mt-1">Filter by campaign status</p>
+                <p className="text-purple-200 text-sm mt-0.5">Filter by campaign status</p>
               </div>
               <div className="flex items-center gap-2">
-                <select className="text-xs bg-white/10 text-white rounded px-3 py-1.5 border border-white/20">
-                  <option>All Active</option>
-                  <option>Enabled</option>
-                  <option>Paused</option>
+                <select
+                  value={campaignStatusFilter}
+                  onChange={(e) => setCampaignStatusFilter(e.target.value)}
+                  className="text-xs bg-white text-slate-700 rounded-md px-3 py-2 border border-slate-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-500 shadow-sm"
+                >
+                  <option value="All">All</option>
+                  <option value="All Active">All Active</option>
+                  <option value="Enabled">Enabled</option>
+                  <option value="Paused">Paused</option>
                 </select>
-                <Button variant="ghost" size="sm" className="text-white hover:bg-white/10">
-                  <Columns className="h-4 w-4 mr-1" />
-                  Columns
-                </Button>
               </div>
             </div>
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full table-fixed min-w-[1000px]">
                 <thead>
-                  <tr className="bg-purple-50 border-b border-purple-100">
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-purple-900 uppercase tracking-wider">Name</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-purple-900 uppercase tracking-wider">Updated</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-purple-900 uppercase tracking-wider">Status ↕</th>
-                    <th className="text-right px-4 py-3 text-xs font-semibold text-purple-900 uppercase tracking-wider">Impressions ↕</th>
-                    <th className="text-right px-4 py-3 text-xs font-semibold text-purple-900 uppercase tracking-wider">Clicks ↕</th>
-                    <th className="text-right px-4 py-3 text-xs font-semibold text-purple-900 uppercase tracking-wider">Cost ↕</th>
-                    <th className="text-right px-4 py-3 text-xs font-semibold text-purple-900 uppercase tracking-wider">Conv. ↕</th>
-                    <th className="text-right px-4 py-3 text-xs font-semibold text-purple-900 uppercase tracking-wider">Cost/Conv.</th>
-                    <th className="text-right px-4 py-3 text-xs font-semibold text-purple-900 uppercase tracking-wider">Avg. CPC ↕</th>
-                    <th className="text-right px-4 py-3 text-xs font-semibold text-purple-900 uppercase tracking-wider">CTR ↕</th>
+                  <tr className="bg-purple-50/80 border-b border-purple-100">
+                    <th className="text-left px-4 py-4 text-xs font-semibold text-purple-900 uppercase whitespace-nowrap w-[20%]">Name</th>
+                    <th className="px-4 py-4 text-xs font-semibold text-purple-900 uppercase whitespace-nowrap w-[10%]">
+                      <div className="flex items-center justify-center gap-1 cursor-pointer hover:text-purple-700">
+                        Updated
+                      </div>
+                    </th>
+                    <th className="px-4 py-4 text-xs font-semibold text-purple-900 uppercase whitespace-nowrap w-[8%]">
+                      <div className="flex items-center justify-center gap-1 cursor-pointer hover:text-purple-700">
+                        Status <span>↕</span>
+                      </div>
+                    </th>
+                    <th className="px-4 py-4 text-xs font-semibold text-purple-900 uppercase whitespace-nowrap w-[10%]">
+                      <div className="flex items-center justify-center gap-1 cursor-pointer hover:text-purple-700">
+                        Impressions <span>↕</span>
+                      </div>
+                    </th>
+                    <th className="px-4 py-4 text-xs font-semibold text-purple-900 uppercase whitespace-nowrap w-[8%]">
+                      <div className="flex items-center justify-center gap-1 cursor-pointer hover:text-purple-700">
+                        Clicks <span>↕</span>
+                      </div>
+                    </th>
+                    <th className="px-4 py-4 text-xs font-semibold text-purple-900 uppercase whitespace-nowrap w-[10%]">
+                      <div className="flex items-center justify-center gap-1 cursor-pointer hover:text-purple-700">
+                        Cost <span>↕</span>
+                      </div>
+                    </th>
+                    <th className="px-4 py-4 text-xs font-semibold text-purple-900 uppercase whitespace-nowrap w-[8%]">
+                      <div className="flex items-center justify-center gap-1 cursor-pointer hover:text-purple-700">
+                        Conv. <span>↕</span>
+                      </div>
+                    </th>
+                    <th className="px-4 py-4 text-xs font-semibold text-purple-900 uppercase whitespace-nowrap w-[10%]">
+                      <div className="flex items-center justify-center gap-1 cursor-pointer hover:text-purple-700">
+                        Cost/Conv.
+                      </div>
+                    </th>
+                    <th className="px-4 py-4 text-xs font-semibold text-purple-900 uppercase whitespace-nowrap w-[8%]">
+                      <div className="flex items-center justify-center gap-1 cursor-pointer hover:text-purple-700">
+                        Avg. CPC <span>↕</span>
+                      </div>
+                    </th>
+                    <th className="px-4 py-4 text-xs font-semibold text-purple-900 uppercase whitespace-nowrap w-[8%]">
+                      <div className="flex items-center justify-center gap-1 cursor-pointer hover:text-purple-700">
+                        CTR <span>↕</span>
+                      </div>
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -876,13 +955,13 @@ const GoogleAdsPage = () => {
                       transition={{ delay: index * 0.02 }}
                       className="hover:bg-purple-50/50 transition-colors"
                     >
-                      <td className="px-4 py-3">
-                        <p className="font-medium text-slate-900 text-sm">{campaign.name}</p>
+                      <td className="px-4 py-3.5">
+                        <p className="font-medium text-slate-900 text-sm truncate">{campaign.name}</p>
                       </td>
-                      <td className="px-4 py-3 text-sm text-slate-500">
+                      <td className="px-4 py-3.5 text-center text-sm text-slate-500">
                         {new Date().toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3.5 text-center">
                         <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${campaign.status === 'ENABLED'
                           ? 'text-green-600'
                           : campaign.status === 'PAUSED'
@@ -898,25 +977,25 @@ const GoogleAdsPage = () => {
                           {campaign.status === 'ENABLED' ? 'Active' : campaign.status}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-right text-sm text-slate-700">
+                      <td className="px-4 py-3.5 text-center text-sm text-slate-700">
                         {formatNumber(campaign.impressions)}
                       </td>
-                      <td className="px-4 py-3 text-right text-sm font-medium text-purple-600">
+                      <td className="px-4 py-3.5 text-center text-sm font-medium text-purple-600">
                         {formatNumber(campaign.clicks)}
                       </td>
-                      <td className="px-4 py-3 text-right text-sm text-slate-700">
+                      <td className="px-4 py-3.5 text-center text-sm text-slate-700">
                         {formatCurrency(campaign.cost)}
                       </td>
-                      <td className="px-4 py-3 text-right text-sm font-medium text-purple-600">
+                      <td className="px-4 py-3.5 text-center text-sm font-medium text-purple-600">
                         {campaign.conversions}
                       </td>
-                      <td className="px-4 py-3 text-right text-sm text-red-500">
+                      <td className="px-4 py-3.5 text-center text-sm text-red-500">
                         {formatCurrency(campaign.costPerConversion || 0)}
                       </td>
-                      <td className="px-4 py-3 text-right text-sm text-purple-600">
+                      <td className="px-4 py-3.5 text-center text-sm text-purple-600">
                         {formatCurrency(campaign.averageCpc)}
                       </td>
-                      <td className="px-4 py-3 text-right text-sm text-slate-700">
+                      <td className="px-4 py-3.5 text-center text-sm text-slate-700">
                         {campaign.ctr.toFixed(2)}%
                       </td>
                     </motion.tr>
@@ -930,47 +1009,79 @@ const GoogleAdsPage = () => {
 
       {/* Keywords Table */}
       {keywords.length > 0 && (
-        <Card className="bg-white overflow-hidden border-purple-100">
-          <CardHeader className="bg-gradient-to-r from-purple-700 to-purple-600 text-white">
-            <div className="flex items-center justify-between">
+        <Card className="bg-white overflow-hidden border-purple-100 shadow-sm">
+          <CardHeader className="bg-gradient-to-r from-purple-700 to-purple-600 text-white px-6 py-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <CardTitle className="text-white flex items-center gap-2">
+                <CardTitle className="text-white flex items-center gap-2 text-lg">
                   List of Keywords
                 </CardTitle>
-                <p className="text-purple-200 text-sm mt-1">Filter by keyword status</p>
+                <p className="text-purple-200 text-sm mt-0.5">Filter by match type</p>
               </div>
               <div className="flex items-center gap-2">
-                <select className="text-xs bg-white/10 text-white rounded px-3 py-1.5 border border-white/20">
-                  <option>All</option>
-                  <option>BROAD</option>
-                  <option>PHRASE</option>
-                  <option>EXACT</option>
+                <select
+                  value={keywordMatchTypeFilter}
+                  onChange={(e) => setKeywordMatchTypeFilter(e.target.value)}
+                  className="text-xs bg-white text-slate-700 rounded-md px-3 py-2 border border-slate-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-500 shadow-sm"
+                >
+                  <option value="All">All</option>
+                  <option value="BROAD">BROAD</option>
+                  <option value="PHRASE">PHRASE</option>
+                  <option value="EXACT">EXACT</option>
                 </select>
-                <Button variant="ghost" size="sm" className="text-white hover:bg-white/10">
-                  <Columns className="h-4 w-4 mr-1" />
-                  Columns
-                </Button>
               </div>
             </div>
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full table-fixed min-w-[1000px]">
                 <thead>
-                  <tr className="bg-purple-50 border-b border-purple-100">
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-purple-900 uppercase tracking-wider">Keyword</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-purple-900 uppercase tracking-wider">Match Type ↕</th>
-                    <th className="text-right px-4 py-3 text-xs font-semibold text-purple-900 uppercase tracking-wider">Impressions ↕</th>
-                    <th className="text-right px-4 py-3 text-xs font-semibold text-purple-900 uppercase tracking-wider">Clicks ↕</th>
-                    <th className="text-right px-4 py-3 text-xs font-semibold text-purple-900 uppercase tracking-wider">Cost ↕</th>
-                    <th className="text-right px-4 py-3 text-xs font-semibold text-purple-900 uppercase tracking-wider">Conv. ↕</th>
-                    <th className="text-right px-4 py-3 text-xs font-semibold text-purple-900 uppercase tracking-wider">Cost/Conv.</th>
-                    <th className="text-right px-4 py-3 text-xs font-semibold text-purple-900 uppercase tracking-wider">Avg CPC ↕</th>
-                    <th className="text-right px-4 py-3 text-xs font-semibold text-purple-900 uppercase tracking-wider">CTR ↕</th>
+                  <tr className="bg-purple-50/80 border-b border-purple-100">
+                    <th className="text-left px-4 py-4 text-xs font-semibold text-purple-900 uppercase whitespace-nowrap w-[22%]">Keyword</th>
+                    <th className="px-4 py-4 text-xs font-semibold text-purple-900 uppercase whitespace-nowrap w-[10%]">
+                      <div className="flex items-center justify-center gap-1 cursor-pointer hover:text-purple-700">
+                        Match Type <span>↕</span>
+                      </div>
+                    </th>
+                    <th className="px-4 py-4 text-xs font-semibold text-purple-900 uppercase whitespace-nowrap w-[10%]">
+                      <div className="flex items-center justify-center gap-1 cursor-pointer hover:text-purple-700">
+                        Impressions <span>↕</span>
+                      </div>
+                    </th>
+                    <th className="px-4 py-4 text-xs font-semibold text-purple-900 uppercase whitespace-nowrap w-[8%]">
+                      <div className="flex items-center justify-center gap-1 cursor-pointer hover:text-purple-700">
+                        Clicks <span>↕</span>
+                      </div>
+                    </th>
+                    <th className="px-4 py-4 text-xs font-semibold text-purple-900 uppercase whitespace-nowrap w-[10%]">
+                      <div className="flex items-center justify-center gap-1 cursor-pointer hover:text-purple-700">
+                        Cost <span>↕</span>
+                      </div>
+                    </th>
+                    <th className="px-4 py-4 text-xs font-semibold text-purple-900 uppercase whitespace-nowrap w-[8%]">
+                      <div className="flex items-center justify-center gap-1 cursor-pointer hover:text-purple-700">
+                        Conv. <span>↕</span>
+                      </div>
+                    </th>
+                    <th className="px-4 py-4 text-xs font-semibold text-purple-900 uppercase whitespace-nowrap w-[12%]">
+                      <div className="flex items-center justify-center gap-1 cursor-pointer hover:text-purple-700">
+                        Cost/Conv.
+                      </div>
+                    </th>
+                    <th className="px-4 py-4 text-xs font-semibold text-purple-900 uppercase whitespace-nowrap w-[10%]">
+                      <div className="flex items-center justify-center gap-1 cursor-pointer hover:text-purple-700">
+                        Avg CPC <span>↕</span>
+                      </div>
+                    </th>
+                    <th className="px-4 py-4 text-xs font-semibold text-purple-900 uppercase whitespace-nowrap w-[10%]">
+                      <div className="flex items-center justify-center gap-1 cursor-pointer hover:text-purple-700">
+                        CTR <span>↕</span>
+                      </div>
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {filteredKeywords.slice(0, 20).map((kw, index) => (
+                  {filteredKeywords.slice(0, rowsLimit).map((kw, index) => (
                     <motion.tr
                       key={kw.id}
                       initial={{ opacity: 0 }}
@@ -978,13 +1089,13 @@ const GoogleAdsPage = () => {
                       transition={{ delay: index * 0.02 }}
                       className="hover:bg-purple-50/50 transition-colors"
                     >
-                      <td className="px-4 py-3">
-                        <p className="font-medium text-slate-900 text-sm flex items-center gap-2">
-                          <Search className="h-3.5 w-3.5 text-slate-400" />
-                          {kw.keyword}
+                      <td className="px-4 py-3.5">
+                        <p className="font-medium text-slate-900 text-sm flex items-center gap-2 truncate">
+                          <Search className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
+                          <span className="truncate">{kw.keyword}</span>
                         </p>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3.5 text-center">
                         <span className={`px-2 py-1 rounded text-xs font-medium ${kw.matchType === 'BROAD' ? 'bg-blue-100 text-blue-700' :
                           kw.matchType === 'PHRASE' ? 'bg-purple-100 text-purple-700' :
                             kw.matchType === 'EXACT' ? 'bg-emerald-100 text-emerald-700' :
@@ -993,25 +1104,25 @@ const GoogleAdsPage = () => {
                           {kw.matchType}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-right text-sm text-slate-700">
+                      <td className="px-4 py-3.5 text-center text-sm text-slate-700">
                         {formatNumber(kw.impressions)}
                       </td>
-                      <td className="px-4 py-3 text-right text-sm font-medium text-purple-600">
+                      <td className="px-4 py-3.5 text-center text-sm font-medium text-purple-600">
                         {formatNumber(kw.clicks)}
                       </td>
-                      <td className="px-4 py-3 text-right text-sm text-slate-700">
+                      <td className="px-4 py-3.5 text-center text-sm text-slate-700">
                         {formatCurrency(kw.cost)}
                       </td>
-                      <td className="px-4 py-3 text-right text-sm font-medium text-purple-600">
+                      <td className="px-4 py-3.5 text-center text-sm font-medium text-purple-600">
                         {kw.conversions}
                       </td>
-                      <td className="px-4 py-3 text-right text-sm text-slate-700">
+                      <td className="px-4 py-3.5 text-center text-sm text-slate-700">
                         {formatCurrency(kw.costPerConversion)}
                       </td>
-                      <td className="px-4 py-3 text-right text-sm text-purple-600">
+                      <td className="px-4 py-3.5 text-center text-sm text-purple-600">
                         {formatCurrency(kw.averageCpc)}
                       </td>
-                      <td className="px-4 py-3 text-right text-sm text-slate-700">
+                      <td className="px-4 py-3.5 text-center text-sm text-slate-700">
                         {kw.ctr.toFixed(2)}%
                       </td>
                     </motion.tr>
@@ -1019,23 +1130,24 @@ const GoogleAdsPage = () => {
                 </tbody>
               </table>
             </div>
-            {/* Pagination */}
-            <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100">
+            {/* Pagination Controls - Simplified to just Limit */}
+            <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 border-t border-slate-100 gap-3">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-slate-500">Show</span>
-                <select className="text-sm border rounded px-2 py-1">
-                  <option>10</option>
-                  <option>20</option>
-                  <option>50</option>
+                <select
+                  value={rowsLimit}
+                  onChange={(e) => setRowsLimit(Number(e.target.value))}
+                  className="text-sm border border-slate-200 text-slate-700 rounded-md px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-purple-500 shadow-sm"
+                >
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
                 </select>
+                <span className="text-sm text-slate-500">rows</span>
               </div>
-              <div className="flex items-center gap-1">
-                <Button variant="outline" size="sm" disabled>←</Button>
-                <Button variant="outline" size="sm" className="bg-purple-600 text-white hover:bg-purple-700">1</Button>
-                <Button variant="outline" size="sm">2</Button>
-                <Button variant="outline" size="sm">3</Button>
-                <span className="px-2 text-slate-400">...</span>
-                <Button variant="outline" size="sm">→</Button>
+              <div className="text-sm text-slate-500">
+                Showing {Math.min(rowsLimit, filteredKeywords.length)} of {filteredKeywords.length} keywords
               </div>
             </div>
           </CardContent>
