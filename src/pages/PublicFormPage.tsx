@@ -11,52 +11,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-
-interface FieldOption {
-    id: string;
-    label: string;
-    value: string;
-}
-
-interface FormField {
-    id: string;
-    type: string;
-    label: string;
-    placeholder?: string;
-    description?: string;
-    options?: FieldOption[];
-    validation?: {
-        required?: boolean;
-        minLength?: number;
-        maxLength?: number;
-        pattern?: string;
-    };
-}
-
-interface FormPage {
-    id: string;
-    name: string;
-    description?: string;
-    fields: FormField[];
-}
-
-interface FormTemplate {
-    _id: string;
-    name: string;
-    description?: string;
-    slug: string;
-    pages: FormPage[];
-    coverPage: {
-        title: string;
-        description?: string;
-        imageUrl?: string;
-        showCover: boolean;
-    };
-    theme: {
-        accentColor: string;
-        mode: 'light' | 'dark';
-    };
-}
+import { formService } from '@/services/formService';
+import type { FormTemplate, FormField } from '@/types/formBuilder';
 
 const PublicFormPage = () => {
     const { slug } = useParams<{ slug: string }>();
@@ -77,30 +33,16 @@ const PublicFormPage = () => {
     const loadForm = async () => {
         try {
             setLoading(true);
-            const response = await fetch(`/api/forms/${slug}`);
-
-            if (!response.ok) {
-                if (response.status === 404) {
-                    setError('This form doesn\'t exist or has been unpublished.');
-                } else {
-                    setError('Failed to load form. Please try again later.');
-                }
-                return;
-            }
-
-            const contentType = response.headers.get('content-type');
-            if (!contentType || !contentType.includes('application/json')) {
-                setError('Invalid response from server.');
-                return;
-            }
-
-            const data = await response.json();
+            const data = await formService.getPublicForm(slug!);
             setForm(data);
-
             setCurrentPageIndex(data.coverPage?.showCover ? -1 : 0);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error loading form:', error);
-            setError('Failed to load form. Please check your connection.');
+            if (error.response?.status === 404) {
+                setError('This form doesn\'t exist or has been unpublished.');
+            } else {
+                setError('Failed to load form. Please check your connection.');
+            }
         } finally {
             setLoading(false);
         }
@@ -211,22 +153,12 @@ const PublicFormPage = () => {
                 organizedData[page.id] = pageData;
             });
 
-            const response = await fetch(`/api/forms/${slug}/submit`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    data: organizedData,
-                    respondentEmail,
-                    respondentName,
-                    startedAt: startTime.toISOString(),
-                }),
+            await formService.submitForm(slug!, {
+                data: organizedData,
+                respondentEmail,
+                respondentName,
+                startedAt: startTime.toISOString(),
             });
-
-            if (!response.ok) {
-                throw new Error('Failed to submit form');
-            }
 
             setSubmitted(true);
             toast.success('Form submitted successfully!');
@@ -272,7 +204,7 @@ const PublicFormPage = () => {
             </div>
         );
 
-        switch (field.type) {
+        switch (field.type as string) {
             case 'short_answer':
             case 'short-text':
                 return fieldWrapper(
