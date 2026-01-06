@@ -116,6 +116,7 @@ export interface FormTemplate {
   projectId: string;
   name: string;
   description?: string;
+  slug?: string;
   theme: FormTheme;
   coverPage: FormCoverPage;
   pages: FormPage[];

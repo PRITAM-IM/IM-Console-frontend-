@@ -3,9 +3,10 @@ import type { FormTemplate } from '../types/formBuilder';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
-// Get auth token from localStorage
+// Get auth token from localStorage or sessionStorage
 const getAuthToken = () => {
-    return localStorage.getItem('token');
+    // Use the same key as the auth system
+    return localStorage.getItem('ha_dashboard_token') || sessionStorage.getItem('ha_dashboard_token');
 };
 
 // Axios instance with auth

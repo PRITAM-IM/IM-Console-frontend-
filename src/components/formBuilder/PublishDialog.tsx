@@ -18,7 +18,7 @@ const PublishDialog = ({ template, isOpen, onClose, onPublish }: PublishDialogPr
 
   if (!isOpen) return null;
 
-  const formUrl = template.publishedUrl || `${window.location.origin}/forms/${template._id}`;
+  const formUrl = template.publishedUrl || `${window.location.origin}/f/${template.slug || template._id}`;
 
   const handleCopy = async () => {
     try {

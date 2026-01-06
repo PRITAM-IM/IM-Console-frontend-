@@ -39,6 +39,8 @@ import LinkedInPage from "@/pages/LinkedInPage";
 import GooglePlacesPage from "@/pages/GooglePlacesPage";
 import TemplatesPage from "@/pages/TemplatesPage";
 import TemplateBuilderPage from "@/pages/TemplateBuilderPage";
+import FormResponsesPage from "@/pages/FormResponsesPage";
+import PublicFormPage from "@/pages/PublicFormPage";
 import AIMasterPage from "@/pages/AIMasterPage";
 import RevenueOpportunitiesPage from "@/pages/RevenueOpportunitiesPage";
 import AllProjectsPage from "@/pages/AllProjectsPage";
@@ -77,6 +79,9 @@ const App = () => (
         <Route path="/auth/google-business-profile/callback" element={<GoogleBusinessProfileCallbackPage />} />
         <Route path="/auth/linkedin/callback" element={<LinkedInCallbackPage />} />
 
+        {/* Public Form Route - No Auth Required */}
+        <Route path="/f/:slug" element={<PublicFormPage />} />
+
         <Route element={<ProtectedRoute />}>
           <Route element={<AppLayout />}>
             <Route path="/projects/new" element={<NewProjectPage />} />
@@ -89,6 +94,7 @@ const App = () => (
             <Route path="/dashboard/:projectId/templates" element={<TemplatesPage />} />
             <Route path="/dashboard/:projectId/templates/new" element={<TemplateBuilderPage />} />
             <Route path="/dashboard/:projectId/templates/:templateId" element={<TemplateBuilderPage />} />
+            <Route path="/dashboard/:projectId/templates/:templateId/responses" element={<FormResponsesPage />} />
             <Route path="/dashboard/:projectId/ai-master" element={<AIMasterPage />} />
           </Route>
 

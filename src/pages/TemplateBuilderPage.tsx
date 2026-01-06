@@ -172,7 +172,7 @@ const TemplateBuilderPage = () => {
         console.log('Form created:', created);
 
         // Update URL to include the new template ID
-        navigate(`/dashboard/${projectId}/templates/${created._id}/edit`, { replace: true });
+        navigate(`/dashboard/${projectId}/templates/${created._id}`, { replace: true });
       }
     } catch (error: any) {
       console.error('Error saving template:', error);

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -13,36 +13,34 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-
-
-// Mock data - will be replaced with API calls
-const mockTemplates = [
-  {
-    id: '1',
-    name: 'Guest Check-In Form',
-    description: 'Collect guest information upon arrival',
-    pageCount: 3,
-    responseCount: 45,
-    lastUpdated: '2025-12-05',
-    isPublished: true,
-    isCpsTemplate: false
-  },
-  {
-    id: '2',
-    name: 'Feedback Survey',
-    description: 'Post-stay guest feedback collection',
-    pageCount: 2,
-    responseCount: 128,
-    lastUpdated: '2025-12-04',
-    isPublished: true,
-    isCpsTemplate: false
-  }
-];
+import formService from "@/services/formService";
+import { toast } from "sonner";
 
 const TemplatesPage = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
-  const [templates] = useState(mockTemplates);
+  const [templates, setTemplates] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Load templates from API
+  useEffect(() => {
+    loadTemplates();
+  }, [projectId]);
+
+  const loadTemplates = async () => {
+    if (!projectId) return;
+
+    try {
+      setLoading(true);
+      const forms = await formService.getFormsByProject(projectId);
+      setTemplates(forms);
+    } catch (error: any) {
+      console.error('Error loading templates:', error);
+      toast.error('Failed to load templates');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleCreateNew = () => {
     navigate(`/dashboard/${projectId}/templates/new`);
@@ -181,7 +179,14 @@ const TemplatesPage = () => {
           </div>
 
           {/* Templates Grid */}
-          {templates.length === 0 ? (
+          {loading ? (
+            <div className="flex items-center justify-center py-16">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4" />
+                <p className="text-slate-600">Loading templates...</p>
+              </div>
+            </div>
+          ) : templates.length === 0 ? (
             <Card className="border-2 border-dashed border-slate-300">
               <CardContent className="py-16 text-center">
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 mb-4">
@@ -201,7 +206,7 @@ const TemplatesPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {templates.map((template, index) => (
                 <motion.div
-                  key={template.id}
+                  key={template._id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
@@ -209,7 +214,7 @@ const TemplatesPage = () => {
                   <Card className="border-slate-200/60 hover:shadow-lg transition-all group cursor-pointer">
                     <CardHeader
                       className="cursor-pointer"
-                      onClick={() => handleEditTemplate(template.id)}
+                      onClick={() => handleEditTemplate(template._id)}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-3">
@@ -246,11 +251,11 @@ const TemplatesPage = () => {
                         <div className="flex items-center gap-4 text-xs text-slate-600">
                           <div className="flex items-center gap-1">
                             <FileText className="h-3 w-3" />
-                            <span>{template.pageCount} pages</span>
+                            <span>{template.pages?.length || 0} pages</span>
                           </div>
                           <div className="flex items-center gap-1">
                             <BarChart3 className="h-3 w-3" />
-                            <span>{template.responseCount} responses</span>
+                            <span>{template.submissionCount || 0} responses</span>
                           </div>
                         </div>
 
@@ -265,7 +270,7 @@ const TemplatesPage = () => {
                             {template.isPublished ? '● Published' : '○ Draft'}
                           </span>
                           <span className="text-xs text-slate-500">
-                            Updated {template.lastUpdated}
+                            Updated {template.updatedAt ? new Date(template.updatedAt).toLocaleDateString() : 'N/A'}
                           </span>
                         </div>
 
@@ -276,7 +281,7 @@ const TemplatesPage = () => {
                             size="sm"
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleEditTemplate(template.id);
+                              handleEditTemplate(template._id);
                             }}
                             className="flex-1 text-xs"
                           >
@@ -288,7 +293,7 @@ const TemplatesPage = () => {
                             size="sm"
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleViewResponses(template.id);
+                              handleViewResponses(template._id);
                             }}
                             className="flex-1 text-xs"
                           >
