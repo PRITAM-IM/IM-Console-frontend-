@@ -32,6 +32,8 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { formService } from '@/services/formService';
+import type { FormTemplate } from '@/types/formBuilder';
 
 interface FormSubmission {
     _id: string;
@@ -41,25 +43,6 @@ interface FormSubmission {
     completedAt: string;
     ipAddress?: string;
     userAgent?: string;
-}
-
-interface FormTemplate {
-    _id: string;
-    name: string;
-    description?: string;
-    slug: string;
-    publishedUrl?: string;
-    submissionCount: number;
-    viewCount: number;
-    pages?: Array<{
-        id: string;
-        name: string;
-        fields: Array<{
-            id: string;
-            label: string;
-            type: string;
-        }>;
-    }>;
 }
 
 const FormResponsesPage = () => {
@@ -80,36 +63,10 @@ const FormResponsesPage = () => {
         try {
             setLoading(true);
 
-            const formResponse = await fetch(
-                `/api/projects/${projectId}/forms/${templateId}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem('ha_dashboard_token') || sessionStorage.getItem('ha_dashboard_token')}`,
-                    },
-                }
-            );
-
-            if (!formResponse.ok) {
-                throw new Error('Failed to load form');
-            }
-
-            const formData = await formResponse.json();
+            const formData = await formService.getFormById(projectId!, templateId!);
             setForm(formData);
 
-            const submissionsResponse = await fetch(
-                `/api/projects/${projectId}/forms/${templateId}/submissions`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem('ha_dashboard_token') || sessionStorage.getItem('ha_dashboard_token')}`,
-                    },
-                }
-            );
-
-            if (!submissionsResponse.ok) {
-                throw new Error('Failed to load submissions');
-            }
-
-            const submissionsData = await submissionsResponse.json();
+            const submissionsData = await formService.getSubmissions(projectId!, templateId!);
             setSubmissions(submissionsData.submissions || []);
         } catch (error) {
             console.error('Error loading data:', error);
@@ -130,20 +87,7 @@ const FormResponsesPage = () => {
         }
 
         try {
-            const response = await fetch(
-                `/api/projects/${projectId}/forms/${templateId}/submissions/${submissionId}`,
-                {
-                    method: 'DELETE',
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem('ha_dashboard_token') || sessionStorage.getItem('ha_dashboard_token')}`,
-                    },
-                }
-            );
-
-            if (!response.ok) {
-                throw new Error('Failed to delete submission');
-            }
-
+            await formService.deleteSubmission(projectId!, templateId!, submissionId);
             toast.success('Response deleted successfully');
             loadFormAndSubmissions();
         } catch (error) {
