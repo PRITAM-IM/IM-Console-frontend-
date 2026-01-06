@@ -52,7 +52,7 @@ import LoadingState from "@/components/common/LoadingState";
 
 const App = () => (
   <>
-    <Toaster position="top-right" richColors closeButton />
+    <Toaster position="bottom-right" richColors closeButton />
     <Suspense fallback={<LoadingState message="Loading hotel analytics..." className="py-16" />}>
       <Routes>
         {/* Public Pages */}
