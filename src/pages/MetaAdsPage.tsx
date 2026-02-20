@@ -16,7 +16,8 @@ import {
   BarChart3,
   PieChart as PieChartIcon,
   Activity,
-  Minus
+  Minus,
+  Wallet
 } from "lucide-react";
 import {
   BarChart,
@@ -92,6 +93,20 @@ interface DailyData {
   cpm: number;
 }
 
+interface AccountBalance {
+  accountId: string;
+  accountName: string;
+  currency: string;
+  balance: number;
+  accountBalance: number;
+  accountStatus: number;
+  accountStatusText: string;
+  amountSpent: number;
+  spendCap: number | null;
+  minDailyBudget: number | null;
+  fundingSourceDetails: any;
+}
+
 const formatNumber = (num: number) => {
   if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
   if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
@@ -127,6 +142,7 @@ const MetaAdsPage = () => {
   const [demographics, setDemographics] = useState<DemographicBreakdown[]>([]);
   const [platforms, setPlatforms] = useState<PlatformBreakdown[]>([]);
   const [dailyData, setDailyData] = useState<DailyData[]>([]);
+  const [balance, setBalance] = useState<AccountBalance | null>(null);
 
   const [loadingData, setLoadingData] = useState(true);
   const [dataError, setDataError] = useState<string | null>(null);
@@ -171,13 +187,14 @@ const MetaAdsPage = () => {
     setDataError(null);
 
     try {
-      // Fetch all data in parallel
-      const [insightsRes, campaignsRes, demographicsRes, platformsRes, dailyRes] = await Promise.all([
+      // Fetch all data in parallel (including balance)
+      const [insightsRes, campaignsRes, demographicsRes, platformsRes, dailyRes, balanceRes] = await Promise.all([
         api.get<{ success: boolean; data: MetaAdsInsights }>(`/meta-ads/insights/${projectId}`, { params }),
         api.get<{ success: boolean; data: Campaign[] }>(`/meta-ads/campaigns/${projectId}`, { params }).catch(() => ({ data: { success: true, data: [] } })),
         api.get<{ success: boolean; data: DemographicBreakdown[] }>(`/meta-ads/demographics/${projectId}`, { params }).catch(() => ({ data: { success: true, data: [] } })),
         api.get<{ success: boolean; data: PlatformBreakdown[] }>(`/meta-ads/platforms/${projectId}`, { params }).catch(() => ({ data: { success: true, data: [] } })),
         api.get<{ success: boolean; data: DailyData[] }>(`/meta-ads/daily/${projectId}`, { params }).catch(() => ({ data: { success: true, data: [] } })),
+        api.get<{ success: boolean; data: AccountBalance }>(`/meta-ads/balance/${projectId}`).catch(() => ({ data: { success: false, data: null } })),
       ]);
 
       if (insightsRes.data.success) setInsights(insightsRes.data.data);
@@ -185,6 +202,7 @@ const MetaAdsPage = () => {
       if (demographicsRes.data.success) setDemographics(demographicsRes.data.data);
       if (platformsRes.data.success) setPlatforms(platformsRes.data.data);
       if (dailyRes.data.success) setDailyData(dailyRes.data.data);
+      if (balanceRes.data.success && balanceRes.data.data) setBalance(balanceRes.data.data);
     } catch (err: any) {
       setDataError(err.response?.data?.error || "Failed to load Meta Ads insights");
     } finally {
@@ -334,7 +352,25 @@ const MetaAdsPage = () => {
       ) : insights ? (
         <>
           {/* Top Metrics Row - Like IM Console */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+            {/* Available Funds Card */}
+            {balance && (
+              <Card className="bg-gradient-to-br from-green-500 to-emerald-600 text-white border-0 shadow-lg">
+                <CardContent className="pt-4 pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                      <Wallet className="h-4 w-4 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-green-100 uppercase tracking-wider font-medium">Available Funds</p>
+                      <p className="text-xl font-bold">{formatCurrencyUtil(balance.balance, balance.currency)}</p>
+                      <p className="text-[10px] text-green-100 mt-0.5">{balance.accountStatusText}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             <Card className="bg-white border border-slate-200">
               <CardContent className="pt-4 pb-4">
                 <div className="flex items-center gap-3">
