@@ -84,7 +84,7 @@ const GoogleSearchConsolePage = () => {
   const [countries, setCountries] = useState<SearchConsoleCountry[]>([]);
   const [devices, setDevices] = useState<SearchConsoleDevice[]>([]);
   const [loadingData, setLoadingData] = useState(true);
-
+  const [tokenExpired, setTokenExpired] = useState(false);
 
   const [rangePreset, setRangePreset] = useState<DateRangePreset>("last28days");
   const [customRange, setCustomRange] = useState<{ startDate?: string; endDate?: string }>({});
@@ -131,7 +131,12 @@ const GoogleSearchConsolePage = () => {
     };
 
     setLoadingData(true);
+    setTokenExpired(false);
 
+    // Helper to detect token expiry from Axios errors
+    const isTokenExpired = (err: any) =>
+      err?.response?.status === 401 ||
+      err?.response?.data?.errorCode === 'TOKEN_EXPIRED';
 
     try {
       const { data } = await api.get<{ success: boolean; data: SearchConsoleOverview }>(
@@ -140,6 +145,7 @@ const GoogleSearchConsolePage = () => {
       );
       if (data.success) setOverview(data.data);
     } catch (err: any) {
+      if (isTokenExpired(err)) { setTokenExpired(true); setLoadingData(false); return; }
       console.error(err);
     }
 
@@ -150,6 +156,7 @@ const GoogleSearchConsolePage = () => {
       );
       if (data.success) setQueries(data.data);
     } catch (err: any) {
+      if (isTokenExpired(err)) { setTokenExpired(true); setLoadingData(false); return; }
       console.error(err);
     }
 
@@ -160,6 +167,7 @@ const GoogleSearchConsolePage = () => {
       );
       if (data.success) setPages(data.data);
     } catch (err: any) {
+      if (isTokenExpired(err)) { setTokenExpired(true); setLoadingData(false); return; }
       console.error(err);
     }
 
@@ -170,6 +178,7 @@ const GoogleSearchConsolePage = () => {
       );
       if (data.success) setCountries(data.data);
     } catch (err: any) {
+      if (isTokenExpired(err)) { setTokenExpired(true); setLoadingData(false); return; }
       console.error(err);
     }
 
@@ -180,6 +189,7 @@ const GoogleSearchConsolePage = () => {
       );
       if (data.success) setDevices(data.data);
     } catch (err: any) {
+      if (isTokenExpired(err)) { setTokenExpired(true); setLoadingData(false); return; }
       console.error(err);
     }
 
@@ -265,7 +275,32 @@ const GoogleSearchConsolePage = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
     >
-      {/* Header */}
+      {/* Token Expired Banner */}
+      {tokenExpired && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center justify-between gap-4 rounded-xl border border-amber-300 bg-amber-50 px-5 py-4 shadow-sm"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100">
+              <svg className="h-5 w-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-amber-800">Google Search Console session expired</p>
+              <p className="text-xs text-amber-600 mt-0.5">Your access token has expired or been revoked. Reconnect to restore data.</p>
+            </div>
+          </div>
+          <ReconnectButton
+            service="google-search-console"
+            projectId={projectId || ''}
+            onReconnectSuccess={() => window.location.reload()}
+          />
+        </motion.div>
+      )}
+
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="p-3 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl shadow-lg shadow-emerald-500/25">
