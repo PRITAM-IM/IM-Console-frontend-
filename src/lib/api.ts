@@ -21,7 +21,17 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      clearStoredToken();
+      const message = error.response?.data?.message || '';
+      // Only clear token if it's explicitly invalid/expired, not just missing
+      // "No token provided" means the request didn't send the token (config issue)
+      // We should NOT clear here — it would wipe a valid token due to a URL misconfiguration
+      if (
+        message.toLowerCase().includes('invalid token') ||
+        message.toLowerCase().includes('token expired') ||
+        message.toLowerCase().includes('jwt expired')
+      ) {
+        clearStoredToken();
+      }
     }
     return Promise.reject(error);
   }
