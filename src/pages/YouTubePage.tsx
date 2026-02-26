@@ -100,7 +100,8 @@ const formatNumber = (num: number | undefined | null) => {
   return num.toLocaleString();
 };
 
-const formatDate = (dateStr: string) => {
+const formatDate = (dateStr: string | undefined) => {
+  if (!dateStr) return '';
   const date = new Date(dateStr);
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
@@ -209,10 +210,10 @@ const YouTubePage = () => {
     void fetchProject();
   };
 
-  // Prepare traffic pie chart data
+  // Prepare traffic pie chart data — guard against undefined trafficSource
   const trafficPieData = trafficSources.map((source) => ({
-    name: source.trafficSource.replace('YT_', '').replace('_', ' '),
-    value: source.views,
+    name: (source.trafficSource ?? '').replace('YT_', '').replace('_', ' '),
+    value: source.views ?? 0,
     color: TRAFFIC_COLORS[source.trafficSource] || '#6B7280',
   }));
 
@@ -582,7 +583,7 @@ const YouTubePage = () => {
                           <div key={source.trafficSource} className="flex items-center justify-between text-sm">
                             <div className="flex items-center gap-2">
                               <span className="w-3 h-3 rounded-full" style={{ backgroundColor: color }}></span>
-                              <span className="text-slate-700">{source.trafficSource.replace('YT_', '').replace('_', ' ')}</span>
+                              <span className="text-slate-700">{(source.trafficSource ?? '').replace('YT_', '').replace('_', ' ')}</span>
                             </div>
                             <span className="text-slate-500">{percentage}%</span>
                           </div>
